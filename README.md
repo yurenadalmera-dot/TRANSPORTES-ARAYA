@@ -137,7 +137,7 @@ select * from public.v_deca            order by generado_at desc;  -- cadena com
 select * from public.v_deca_huerfanos;                             -- PDF publicados sin historial
 ```
 
-## Factusol · qué hay y qué llega
+## Factusol · el histórico completo
 
 Comprobado el 14/09/2026 contra la API de Software DelSol (`api.sdelsol.com`,
 base `3FS002`, cliente 39592).
@@ -146,14 +146,10 @@ base `3FS002`, cliente 39592).
 fechadas entre 2003 y 2026. Los ejercicios 2019 a 2022 no existen como base
 separada (`BDNoExiste`) y el 2025 responde `KO`; todo hay que pedirlo al 2026.
 
-| Año | En Factusol | En el panel |
-|---|---|---|
-| 2021 | 920 | 11 |
-| 2022 | 1.012 | 15 |
-| 2023 | 934 | 11 |
-| 2024 | 912 | 8 |
-| 2025 | 817 | 12 |
-| 2026 | 470 | 473 |
+Las 11.534 están **todas en el panel**, con sus líneas, su IGIC por línea, su
+estado y sus cobros. De los veinte años, diecinueve cuadran con Factusol al
+céntimo; el 2026 difiere en las cuatro rectificativas emitidas desde el panel,
+que en Factusol no existen.
 
 ### Cómo se consulta
 
@@ -165,26 +161,81 @@ vacío**: con `filtro: ''` responde `OK` y cero filas. La respuesta es
 ### Modelo de datos
 
 - **F_FAC** — cabeceras. Clave `TIPFAC` (serie) + `CODFAC` (número). Cuatro bases
-  con su tipo: `BAS1`→`PIVA1` (7 %), `BAS2`→`PIVA2` (3 %), `BAS3`→`PIVA3` (15 %) y
-  `BAS4`, que es la base **sin IGIC**. `ESTFAC`: 0 pendiente, 1 parcial, 2 cobrada,
-  3 devuelta, 4 impagada. `VENFAC` lleva los vencimientos como `fecha;importe;`.
-- **F_LFA** — líneas. `TIVLFA` es el **índice del grupo de IGIC** de cada línea
-  (0 → `PIVA1`, 1 → `PIVA2`, 2 → `PIVA3`, 3 → base exenta). El porcentaje no viene
-  en la línea: se resuelve contra la cabecera.
+  con su tipo: `BAS1`→`PIVA1`, `BAS2`→`PIVA2`, `BAS3`→`PIVA3` y `BAS4`, que es la
+  base **sin IGIC**. `ESTFAC`: 0 pendiente, 1 parcial, 2 cobrada, 3 devuelta,
+  4 impagada. `VENFAC` lleva los vencimientos como `fecha;importe;`.
+- **F_LFA** — líneas. El grupo de IGIC de cada línea está en **`IVALFA`**
+  (0 → `PIVA1`, 1 → `PIVA2`, 2 → `PIVA3`, 3 → base exenta), no en `TIVLFA`, que
+  viene siempre a cero. El porcentaje no está en la línea: se resuelve contra la
+  cabecera. `PIVLFA` tampoco sirve: siempre vale 0.
 - **F_COB** — cobros y pagos. El documento no está en un campo propio: va dentro
   del texto de `CPTCOB` (`COBRO FACTURA Nº: 1 - 240353`). `CPACOB` numera los
-  cobros parciales de una misma factura y `TIPCOB` distingue cobro de cliente (0)
-  de pago a proveedor (3). Hay filas repetidas: hay que deduplicar.
+  cobros parciales y `TIPCOB` distingue cobro de factura (0), de albarán (1) y
+  pago a proveedor (3). `CODCOB` es único, así que no hay que deduplicar.
 
 Las facturas **recibidas** no están en Factusol (`F_FAP`, `F_LFP` y `F_PAG` vienen
 vacías): las compras se llevan en el panel, por el escáner.
 
-### Espejo
+### Espejo y carga
 
 `factusol_facturas`, `factusol_lineas` y `factusol_cobros` guardan el origen tal
-cual, sin tocar nada operativo. `v_factusol_cuadre` compara año a año lo que hay en
-Factusol con lo que ha llegado al panel, y `v_factusol_faltan` lista las facturas
-que faltan, con cuántas líneas y cuántos cobros tiene cada una en el origen.
+cual. El workflow *Araya · Factusol · traer todo* (`POST /araya/factusol-espejo`)
+los rellena por tramos.
+
+`importar_historico_factusol(lote)` pasa el espejo a las tablas operativas, y es
+idempotente: solo crea las facturas que aún no están. Va a unas 200 facturas por
+segundo.
+
+- El **número** es el `CODFAC`, salvo en los 37 casos en que el mismo número
+  existe en dos series: esos se numeran `serie-numero` (`2-210068`).
+- Manda **la cabecera de Factusol** para base, IGIC y total. Las líneas se traen
+  igualmente con su IGIC propio; cuando no reconstruyen la cabecera (358 facturas
+  de 11.534, por descuentos de línea que el origen no expone) queda anotado en
+  `factusol_sync_log` como `lineas_no_cuadran`.
+- **No genera ningún asiento**: todo el histórico es anterior a
+  `config_contable.fecha_inicio_contable` (01/01/2026). Comprobado: cero asientos
+  para las facturas de origen `factusol-historico`.
+- El estado de Factusol (pendiente, cobro parcial, cobrada, devuelta, impagada)
+  se guarda en `facturas_venta.estado_factusol` y lo publica `v_facturas_venta`.
+
+`v_factusol_cuadre` compara año a año lo que hay en Factusol con lo que ha llegado
+al panel, y `v_factusol_faltan` lista las que faltan.
+
+## El panel
+
+### Buscadores
+
+Clientes y proveedores son listas largas (1.255 y 218). Las dos pantallas llevan
+un buscador que filtra por nombre, CIF, teléfono, correo y dirección, muestra los
+60 primeros y deja ampliar de 60 en 60 (`CLIQ` / `PRVQ`, `bindClientes()` /
+`bindProveedores()`).
+
+### Gastos con el personal dentro
+
+El KPI de **Gastos** del panel suma las facturas recibidas **y el coste de
+personal** del año (devengado + Seguridad Social de la empresa), y el resultado
+del ejercicio se calcula ya con esa suma. `v_panel` publica `gastos_personal`,
+`gastos_personal_mes`, `gastos_totales`, `gastos_totales_mes`, `n_nominas`,
+`nominas_por_pagar` y `n_nominas_por_pagar`.
+
+### Avisos de cobro por correo
+
+El envío real sale del workflow *Araya · Correo saliente (SMTP)*
+(`POST /araya/v2/aviso-cobro`), que manda desde `administracion@` con la
+credencial SMTP, exige sesión válida y rol admin o contable, y deja constancia en
+`avisos_cobro`.
+
+El aviso de **una sola factura** también envía (antes solo ofrecía `mailto:`, y
+ese enlace ni siquiera abría porque codificaba la arroba de la dirección como
+`%40`). Ahora hay *Enviar ahora* y un *Abrir en mi correo* que funciona; el
+asunto se toma de la primera línea del texto, que no viaja dentro del cuerpo.
+
+### Conciliar nóminas contra el banco
+
+Al conciliar un movimiento de salida, el panel consulta
+`sugerir_nominas_movimiento` y ofrece las nóminas que encajan junto a las
+facturas. *Es esta nómina* llama a `conciliar_nomina`, que marca la nómina
+pagada, enlaza el movimiento y genera el asiento `465 / 572`.
 
 ## Copias de seguridad
 
