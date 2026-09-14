@@ -230,6 +230,25 @@ ese enlace ni siquiera abría porque codificaba la arroba de la dirección como
 `%40`). Ahora hay *Enviar ahora* y un *Abrir en mi correo* que funciona; el
 asunto se toma de la primera línea del texto, que no viaja dentro del cuerpo.
 
+### Ficha de cliente
+
+Toda la informacion de un cliente en una sola pantalla, en lugar de repartida
+entre Clientes, Facturacion y Albaranes. Se entra desde *Ver ficha* en la lista
+de clientes, pulsando el nombre del cliente en cualquier lista de facturas, o
+desde *Ficha* en las condiciones de cobro.
+
+La pantalla reune sus datos, sus condiciones de cobro, cuatro indicadores
+(pendiente, facturado total, facturado del ano y cobrado) y cuatro pestanas:
+facturas con su estado (incluidas devueltas e impagadas), cobros, albaranes con
+su DeCA y avisos de cobro enviados. Avisa ademas si tiene facturas devueltas o
+albaranes entregados sin facturar.
+
+Los botones de editar datos, condiciones y nuevo albaran son los mismos de
+siempre: la ficha no duplica formularios, solo los reune.
+
+`v_cliente_ficha` calcula la fila de cada cliente; el resto lo pide la pantalla
+por cliente segun hace falta. El modulo esta en `panel/cliente.js`.
+
 ### Conciliar nóminas contra el banco
 
 Al conciliar un movimiento de salida, el panel consulta
