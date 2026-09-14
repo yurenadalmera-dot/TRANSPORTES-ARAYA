@@ -230,6 +230,29 @@ ese enlace ni siquiera abría porque codificaba la arroba de la dirección como
 `%40`). Ahora hay *Enviar ahora* y un *Abrir en mi correo* que funciona; el
 asunto se toma de la primera línea del texto, que no viaja dentro del cuerpo.
 
+### El escaner reconoce el documento
+
+En la bandeja de escaneo, *Reconocer el documento solo* es ya lo que viene
+marcado. Se suelta el monton de papeles y el panel decide por cada uno si es
+nomina, factura emitida, factura recibida, albaran de trabajo o albaran de
+proveedor, y lo manda a la bandeja que le toca. Los cinco tipos siguen teniendo
+su opcion manual por si hiciera falta forzar uno.
+
+El que reconoce es el workflow *Araya · Escaner · reconocer documento*
+(`POST /araya/clasificar`): recibe **solo la primera pagina** del documento,
+se la pasa a GPT-4o con un prompt que unicamente pide el tipo —ni importes ni
+datos— y devuelve `{tipo, confianza, motivo}`. Leer los datos sigue siendo cosa
+de los lectores de siempre, que no se han tocado.
+
+Lo que no llega al 60 % de confianza, o sale como *otro*, **no se envia a
+ninguna bandeja**: el panel lo nombra y pide elegir el tipo a mano. Mas vale eso
+que colar un recibo del banco en las facturas.
+
+Las nominas van por su ruta con el PDF original, porque su lector usa la capa de
+texto; el resto van como imagenes de pagina, como hasta ahora.
+
+El modulo del panel esta en `panel/escaner.js`.
+
 ### Ficha de cliente
 
 Toda la informacion de un cliente en una sola pantalla, en lugar de repartida
