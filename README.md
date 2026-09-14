@@ -82,3 +82,57 @@ llamada desde `BINDX()`.
 pip install pypdf
 python3 herramientas/parse_nominas.py nominas.pdf    # vuelca el PDF como JSON
 ```
+
+## DeCA · documento electrónico de control administrativo
+
+Obligatorio desde octubre de 2026. Estado frente a los cuatro requisitos técnicos:
+
+### 1. PDF nativo, 5 MB y sellado de tiempo
+
+El PDF se compone con **jsPDF** a partir de los datos estructurados del albarán
+(cargador, transportista, origen, destino, matrícula, remolque, mercancía, código
+LER y firmas). No se escanea nada.
+
+El bucket `deca` rechaza cualquier fichero de más de **5.242.880 bytes** y sólo
+admite `application/pdf`; además `deca_registrar` comprueba el tamaño antes de dar
+el documento por bueno. Los DeCA reales pesan unos 100 KB.
+
+jsPDF escribe `/CreationDate` por sí solo, pero con la hora del navegador. Por eso
+`deca_preparar` devuelve la hora del **servidor** (zona `Atlantic/Canary`) y el panel
+la incrusta en los metadatos del PDF junto con el UUID, la versión, el albarán, la
+matrícula y la URL, y la imprime además de forma visible al lado del QR.
+
+### 2. Código QR
+
+Se dibuja vectorialmente dentro del PDF y apunta a la URL pública del propio
+fichero, bajo HTTPS. El bucket es público en lectura (`deca_lectura_publica`, rol
+`public`), así que el inspector descarga el PDF sin contraseña ni registro.
+
+### 3. Modificaciones durante la ruta
+
+Se sigue la **opción B**: cada nueva emisión genera otro UUID, otra URL y otro QR, y
+el fichero anterior se conserva. La cadena queda en `deca_documentos`: albarán,
+versión, URL, UUID, motivo del cambio, quién lo emitió, cuándo y cuánto pesa, con los
+estados `vigente` / `sustituido` enlazados entre sí.
+
+El historial guarda una **copia de los datos del servicio** (número de albarán, fecha,
+matrícula y cliente), de modo que sigue acreditando el documento aunque después se
+borre el albarán. Al rehacer un DeCA el panel exige indicar el motivo.
+
+La opción A —rehacer el mismo PDF con los datos anteriores tachados, conservando URL
+y QR— **no está implementada**.
+
+### 4. Disponibilidad y conservación
+
+Supabase plan **Pro**, sin pausa por inactividad. El bucket `deca` **no tiene política
+de borrado**, así que ningún usuario de la aplicación puede eliminar un DeCA; y desde
+que se registra en `deca_documentos` tampoco puede sobrescribirlo
+(`deca_update_solo_sin_registrar`). La vista `v_deca` calcula `conservar_hasta`
+(fecha de emisión + 1 año).
+
+### Consultas útiles
+
+```sql
+select * from public.v_deca            order by generado_at desc;  -- cadena completa
+select * from public.v_deca_huerfanos;                             -- PDF publicados sin historial
+```
