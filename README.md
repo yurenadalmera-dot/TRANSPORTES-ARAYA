@@ -136,3 +136,59 @@ que se registra en `deca_documentos` tampoco puede sobrescribirlo
 select * from public.v_deca            order by generado_at desc;  -- cadena completa
 select * from public.v_deca_huerfanos;                             -- PDF publicados sin historial
 ```
+
+## Factusol · qué hay y qué llega
+
+Comprobado el 14/09/2026 contra la API de Software DelSol (`api.sdelsol.com`,
+base `3FS002`, cliente 39592).
+
+**El ejercicio 2026 contiene el histórico completo**: 11.534 facturas de venta
+fechadas entre 2003 y 2026. Los ejercicios 2019 a 2022 no existen como base
+separada (`BDNoExiste`) y el 2025 responde `KO`; todo hay que pedirlo al 2026.
+
+| Año | En Factusol | En el panel |
+|---|---|---|
+| 2021 | 920 | 11 |
+| 2022 | 1.012 | 15 |
+| 2023 | 934 | 11 |
+| 2024 | 912 | 8 |
+| 2025 | 817 | 12 |
+| 2026 | 470 | 473 |
+
+### Cómo se consulta
+
+`POST /login/Autenticar` con la contraseña en **base64** devuelve un token; después
+`POST /admin/CargaTabla` con `{ejercicio, tabla, filtro}`. **El filtro no puede ir
+vacío**: con `filtro: ''` responde `OK` y cero filas. La respuesta es
+`{"resultado": [[{"columna","dato"}, ...], ...]}`.
+
+### Modelo de datos
+
+- **F_FAC** — cabeceras. Clave `TIPFAC` (serie) + `CODFAC` (número). Cuatro bases
+  con su tipo: `BAS1`→`PIVA1` (7 %), `BAS2`→`PIVA2` (3 %), `BAS3`→`PIVA3` (15 %) y
+  `BAS4`, que es la base **sin IGIC**. `ESTFAC`: 0 pendiente, 1 parcial, 2 cobrada,
+  3 devuelta, 4 impagada. `VENFAC` lleva los vencimientos como `fecha;importe;`.
+- **F_LFA** — líneas. `TIVLFA` es el **índice del grupo de IGIC** de cada línea
+  (0 → `PIVA1`, 1 → `PIVA2`, 2 → `PIVA3`, 3 → base exenta). El porcentaje no viene
+  en la línea: se resuelve contra la cabecera.
+- **F_COB** — cobros y pagos. El documento no está en un campo propio: va dentro
+  del texto de `CPTCOB` (`COBRO FACTURA Nº: 1 - 240353`). `CPACOB` numera los
+  cobros parciales de una misma factura y `TIPCOB` distingue cobro de cliente (0)
+  de pago a proveedor (3). Hay filas repetidas: hay que deduplicar.
+
+Las facturas **recibidas** no están en Factusol (`F_FAP`, `F_LFP` y `F_PAG` vienen
+vacías): las compras se llevan en el panel, por el escáner.
+
+### Espejo
+
+`factusol_facturas`, `factusol_lineas` y `factusol_cobros` guardan el origen tal
+cual, sin tocar nada operativo. `v_factusol_cuadre` compara año a año lo que hay en
+Factusol con lo que ha llegado al panel, y `v_factusol_faltan` lista las facturas
+que faltan, con cuántas líneas y cuántos cobros tiene cada una en el origen.
+
+## Copias de seguridad
+
+Supabase respalda la base de datos, pero **no los ficheros de Storage**: restaurar
+un backup no devuelve un PDF borrado. El workflow *Araya · DeCA · copia de
+seguridad* deja cada lunes una segunda copia de los DeCA en Google Drive y la anota
+en `deca_copias`; `v_deca_sin_copia` dice cuáles faltan.
