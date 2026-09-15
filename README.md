@@ -253,6 +253,40 @@ texto; el resto van como imagenes de pagina, como hasta ahora.
 
 El modulo del panel esta en `panel/escaner.js`.
 
+### Cartera antigua e incobrables
+
+El historico de Factusol trajo consigo su cartera abierta: facturas de 2009 a 2020
+que siguen marcadas como pendientes porque nadie las cerro nunca. Contarlas como
+pendiente de cobro daba 1,13 M€, de los que 722.848 € eran de ese arrastre
+(BEFASCA sola, 421.638 € de 2011 a 2013).
+
+Las facturas anteriores a 2021 quedan marcadas como **incobrables**
+(`facturas_venta.incobrable`, con fecha y motivo). No se borra nada: salen del
+pendiente de cobro y pasan a un contador aparte, **Cartera antigua**, con su
+pestana propia en Facturacion. Si alguna se cobra, `marcar_incobrable` la
+devuelve. Nada de lo que persigue dinero —avisos de cobro, prevision, tesoreria—
+las mira.
+
+Pendiente de cobro real: **405.529 €** en 272 facturas.
+
+### Impuestos: modelo 111 y sociedades
+
+`v_modelo_111` cuadra cada trimestre: las retenciones del trabajo salen de las
+nominas (perceptores, base de IRPF y retencion) y las de profesionales de las
+facturas recibidas con retencion. Si hay un modelo presentado en `modelo_111`,
+compara y avisa cuando no cuadra con lo calculado.
+
+`v_impuesto_sociedades` estima el impuesto del ejercicio a partir de los libros
+(grupos 6 y 7 de `apuntes`) y **dice lo que le falta a los libros**: los meses de
+nomina sin contabilizar los descuenta solos, prorrateando los que si estan; la
+amortizacion, que todavia esta a cero, la tiene que poner una persona. Los
+ajustes, el tipo, las bases negativas y los pagos a cuenta se guardan en
+`impuesto_sociedades` con `guardar_impuesto_sociedades`.
+
+A 14/09/2026: resultado segun libros 293.122 €, pero con los ocho meses de
+nominas que faltan (unos 457.736 €) la base estimada se va a -164.614 €. Sirve
+para ir mirando, no como cierre.
+
 ### Ficha de cliente
 
 Toda la informacion de un cliente en una sola pantalla, en lugar de repartida
