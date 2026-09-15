@@ -412,3 +412,23 @@ Arreglado por los dos lados:
 - Los clientes se cargan por paginas (`restPag`), asi que entran los 1.255. Esto
   tambien arregla los desplegables de cliente de albaranes y facturacion, donde esos
   255 tampoco aparecian.
+
+## El menu, por bloques
+
+El menu estaba en un cajon de sastre: quince pantallas seguidas bajo *Operativa*,
+mezclando compras, taller, banco e impuestos. Ahora son **siete bloques**, que siguen
+como se trabaja de verdad en la empresa:
+
+| Bloque | Que hay |
+|---|---|
+| **Inicio** | Panel, Avisos, Informes |
+| **Trafico** | Albaranes de servicio, DeCA, Flota e ITV, Repostajes |
+| **Ventas** | Clientes, Vencimientos de cobro, Facturacion, Factoring, Presupuestos |
+| **Compras** | Escanear y bandeja, Facturas de proveedor, Albaranes de proveedor, Proveedores, Materiales, Inventario |
+| **Tesoreria** | Banco y conciliacion |
+| **Personal** | Plantilla, Nominas |
+| **Contabilidad** | Contabilidad, Impuestos |
+
+**Escanear** y **Bandeja de escaneo** eran dos entradas para lo mismo: escaneas en una
+y revisas en la otra. Ahora es una sola pantalla con dos pestanas, asi que se escanea
+y se revisa sin salir. Ninguna pantalla se ha perdido por el camino.
