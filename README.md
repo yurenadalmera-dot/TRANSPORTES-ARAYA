@@ -585,3 +585,62 @@ tercero y correos usan una propia (`TIT.__cmpmenu`, `TIT.__btercmenu`, `TIT.__co
 pero el de Tesoreria usaba `!TIT.tesoreria`: al anadir ese titulo a mano el bloque dejo de
 correr y Prestamos desaparecio del menu. Si se toca algo de esto, hay que simular el menu
 entero despues, no solo mirar el array del codigo.
+
+## Reclamaciones: burofax, juzgado y seguimiento
+
+Pantalla nueva **Reclamaciones**, en Ventas. Lleva el expediente de cada deuda que se
+reclama: quien lo lleva, el burofax, la fecha de la denuncia, el juzgado, el numero de
+autos, lo recuperado, y un **diario de gestiones** con fecha y tipo (llamada, escrito,
+vista, resolucion, pago...). Cada gestion deja puesto *que toca hacer* y *cuando*, que es
+lo que hace falta para ir preguntando sin que se olvide ninguno.
+
+Tres tablas: `reclamaciones`, `reclamacion_facturas` (una reclamacion puede cubrir varias
+facturas) y `reclamacion_actuaciones` (el diario). Se opera con `guardar_reclamacion()` y
+`anadir_actuacion()`. Al abrir un expediente sin decirle facturas, coge todas las
+pendientes de ejercicios anteriores de ese cliente.
+
+### Lo que dice la ley, y por que importa
+
+La pestana **Sin reclamar** no es solo una lista de morosos: dice de cada uno que via toca
+y cuanto tiempo queda. Contrastado con la norma, no de memoria:
+
+- **La peticion inicial del monitorio no necesita abogado ni procurador, sea cual sea el
+  importe** (art. 814.2 LEC). No hay tope de cuantia desde la Ley 37/2011. Asi que la regla
+  de "menos de 3.000 € lo hacemos nosotros" se queda corta: se puede presentar cualquier
+  importe sin abogado.
+- Se presenta en el **juzgado del domicilio del deudor**, y ese fuero es exclusivo: no cabe
+  pactar otro (art. 813 LEC).
+- Lo que cambia con el importe es **que pasa si el deudor se opone**: hasta 2.000 € sigue
+  siendo juicio verbal sin abogado ni procurador (arts. 23.2.1 y 31.2.1 LEC); hasta 6.000 €
+  es verbal ya con los dos; por encima es ordinario, y hay **un mes** para presentar la
+  demanda o se sobresee con costas (art. 818.2 LEC).
+- **El plazo es de un ano, no de cinco.** En transporte terrestre de mercancias las acciones
+  prescriben al ano (art. 79 Ley 15/2009), dos si hubo dolo. Y aqui la reclamacion
+  extrajudicial escrita **suspende** el plazo, no lo interrumpe: el tiempo ya corrido no se
+  borra, solo se para el reloj (art. 79.3).
+- A la deuda se le suman intereses de demora al tipo que publica el Tesoro cada semestre
+  (**10,40 % para el segundo semestre de 2026**, BOE-A-2026-14327) y **40 € por cada
+  factura** impagada, que el Tribunal Supremo ha fijado que son por factura y no por
+  reclamacion (STS 5012/2025). Los tipos viven en `interes_demora_comercial`: hay que
+  anadir una fila cada 1 de enero y cada 1 de julio.
+
+El panel lo calcula por deudor y lo pinta, pero **es una orientacion para priorizar, no un
+dictamen**: lo dice en pantalla y hay que confirmarlo con el abogado antes de presentar nada.
+Ademas la prescripcion no se aplica de oficio: la tiene que alegar el deudor.
+
+### Lo que sale al mirar la cartera con este filtro
+
+De los 789.690 € de ejercicios anteriores, contando desde el ultimo vencimiento:
+
+| Plazo | Clientes | Deuda |
+|---|---|---|
+| En plazo (menos de 1 ano) | 6 | 18.678 € |
+| Se acaba (quedan menos de 65 dias) | 5 | 3.204 € |
+| Paso el ano | 14 | 12.509 € |
+| Mas de 2 anos | 101 | 755.299 € |
+
+O sea: lo que se puede reclamar con el plazo claramente vivo son **11 clientes y 21.882 €**,
+no los 104 pequenos de anos anteriores. Ahi es donde merece la pena el esfuerzo, y corre
+prisa. El resto no es imposible (hay que ver si a cada servicio le aplica el ano del
+transporte o los cinco del Codigo Civil, y el deudor tiene que alegar la prescripcion),
+pero eso ya es criterio del abogado.
