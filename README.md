@@ -253,6 +253,40 @@ texto; el resto van como imagenes de pagina, como hasta ahora.
 
 El modulo del panel esta en `panel/escaner.js`.
 
+### Conciliar repartiendo el movimiento
+
+`movimientos_banco` tenia una casilla por tipo de documento —`factura_id`,
+`factura_venta_id`, `nomina_id`…— y una sola. De ahi salian tres problemas que
+parecian distintos: un ingreso que paga dos facturas no cabia, un anticipo no se
+podia anadir a una nomina ya conciliada, y un movimiento cuyo cobro **ya estaba
+anotado** solo podia conciliarse creando un segundo cobro, duplicando el ingreso.
+
+`conciliacion_lineas` los resuelve de una vez: cada linea ata un movimiento con
+un documento y dice cuanto de ese movimiento va ahi. Un movimiento se reparte
+entre varios documentos, un documento se cobra o se paga en varias veces, y una
+linea puede **enlazar un cobro existente** (`cobro_id`) en lugar de crear otro.
+
+- `sugerir_reparto(mov)` propone: primero busca si el cobro ya estaba anotado, y
+  si no, la combinacion de hasta tres facturas pendientes del mismo tercero que
+  suma el importe exacto. Una combinacion de dos o tres solo se propone si al
+  menos una lleva el nombre del tercero en el concepto: tres facturas sueltas que
+  por casualidad suman el importe son ruido, no una propuesta.
+- `conciliar_reparto(usuario, mov, lineas)` lo aplica. `deshacer_reparto` lo
+  revierte entero.
+- En pantalla: casilla e importe editable por documento y un contador de **lo que
+  queda por asignar**; el boton de conciliar no se activa hasta que llega a cero.
+
+### Anticipos al personal
+
+Un anticipo **no es el pago de una nomina**: es dinero a cuenta que se descuenta
+de una nomina futura. Va a la **460** contra banco, no a la 465, y `conciliar_reparto`
+se niega a dejar una nomina pagada por encima de su liquido, diciendo que lo marques
+como anticipo. `v_anticipos_personal` lleva lo entregado y todavia no descontado.
+
+El nombre del trabajador se coteja palabra a palabra descartando las de la propia
+empresa: ARAYA, FRANQUIZ y TRANSPORTES salen en todos los conceptos del banco y
+casaban con los tres empleados que se apellidan asi.
+
 ### Cartera antigua e incobrables
 
 El historico de Factusol trajo consigo su cartera abierta: facturas de 2009 a 2020
