@@ -432,3 +432,36 @@ como se trabaja de verdad en la empresa:
 **Escanear** y **Bandeja de escaneo** eran dos entradas para lo mismo: escaneas en una
 y revisas en la otra. Ahora es una sola pantalla con dos pestanas, asi que se escanea
 y se revisa sin salir. Ninguna pantalla se ha perdido por el camino.
+
+## Facturar con las condiciones del cliente
+
+Al facturar albaranes ya no se pone 30 dias a todo el mundo. Si no se dice otra
+cosa, la factura coge los **dias de vencimiento de la ficha del cliente**, y si ese
+cliente tiene **dia fijo de pago**, la fecha se corre al primer dia de pago que caiga
+despues. Un cliente a 60 dias que paga los dias 10: una factura del 15 de septiembre
+vence el 10 de diciembre, no el 14 de noviembre.
+
+Lo calcula `fecha_vencimiento_cliente(cliente, fecha, dias)`, que usa
+`facturar_albaranes` cuando no le pasan los dias. En la pantalla de facturacion, al
+elegir el cliente el campo de vencimiento se rellena solo con sus dias, para ver
+antes de emitir lo que se va a aplicar.
+
+Asi lo que se rellena en *Vencimientos de cobro* sirve de verdad: marca las fechas de
+las facturas nuevas y, con ellas, los avisos de cobro.
+
+## El circuito albaran -> DeCA -> factura, probado entero
+
+Probado de punta a punta contra la base real, en una transaccion que se deshace sola
+(no queda ni rastro):
+
+| Paso | Resultado |
+|---|---|
+| Crear el albaran | se numera solo: `ALB-2026-0004` |
+| Poner las lineas | 2 lineas, base 515,00 € |
+| Firma del cliente | queda firmado |
+| `deca_preparar` | devuelve el documento con sus 7 campos |
+| Facturar sin decir los dias | `F-2026-0001`, 515,00 + 36,05 de IGIC = 551,05 € |
+| Vencimiento | 10/12/2026: cogio los 60 dias y el dia de pago del cliente |
+| Lineas de la factura | las 2, con su albaran y fecha en la descripcion |
+| Estado del albaran | pasa a *facturado* |
+| Intentar facturarlo otra vez | lo impide |
