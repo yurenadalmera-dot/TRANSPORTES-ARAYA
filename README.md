@@ -551,3 +551,37 @@ otras 24 estan en estado 3 o 4 sin nota, o con una nota que no usa la palabra ab
 ("nueva 210285", "POR OTRA EMITIDA EN ABRIL DE 2023", "DUPLICADA", "ANULAR POR SEPARAR").
 Se ven todas en `v_rectificadas`, con su motivo, por si alguna hay que devolver a
 pendiente.
+
+## Pantallas que estaban construidas y no se podian abrir
+
+Al repasar lo que quedaba a medias aparecio un patron: hay modulos que se **inscriben
+solos en el menu** al cargar, con un bloque `(function(){ ... MENU.splice(...) })()` que
+busca una pantalla de referencia y se cuelga detras. Son cinco: Tesoreria + Prestamos,
+Compensaciones, Buscar tercero, Correos enviados, y el que saca Presupuestos de
+"Proximamente".
+
+El de Tesoreria y Prestamos se colgaba detras de **Informes**, que en el menu nuevo esta
+en el bloque Inicio: dos pantallas de tesoreria aparecian arriba del todo, entre el Panel
+y los Informes. Ahora **Cobros y pagos** y **Prestamos** van fijas en el bloque Tesoreria,
+y el bloque solo se encarga de ponerles el titulo.
+
+Compensaciones se cuelga detras de Tesoreria, asi que cae sola en su sitio. El menu al
+cargar queda:
+
+| Bloque | Pantallas |
+|---|---|
+| Inicio | Panel, Avisos, Informes |
+| Trafico | Albaranes de servicio, DeCA, Flota e ITV, Repostajes |
+| Ventas | Clientes, Vencimientos de cobro, Facturacion, Correos enviados, Presupuestos, Factoring |
+| Compras | Escanear y bandeja, Facturas de proveedor, Albaranes de proveedor, Proveedores, Materiales, Inventario |
+| Tesoreria | Cobros y pagos, Compensaciones, Prestamos, Banco y conciliacion |
+| Personal | Plantilla, Nominas |
+| Contabilidad | Contabilidad, Buscar tercero, Impuestos |
+
+Treinta pantallas, ninguna repetida y ninguna sin bloque.
+
+**Cuidado con los flags.** Cada bloque usa una marca para no duplicarse. Compensaciones,
+tercero y correos usan una propia (`TIT.__cmpmenu`, `TIT.__btercmenu`, `TIT.__cormenu`),
+pero el de Tesoreria usaba `!TIT.tesoreria`: al anadir ese titulo a mano el bloque dejo de
+correr y Prestamos desaparecio del menu. Si se toca algo de esto, hay que simular el menu
+entero despues, no solo mirar el array del codigo.
