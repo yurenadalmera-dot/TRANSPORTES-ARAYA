@@ -465,3 +465,26 @@ Probado de punta a punta contra la base real, en una transaccion que se deshace 
 | Lineas de la factura | las 2, con su albaran y fecha en la descripcion |
 | Estado del albaran | pasa a *facturado* |
 | Intentar facturarlo otra vez | lo impide |
+
+## La numeracion de las facturas
+
+El panel **continua la numeracion de Factusol**, no abre una serie propia. Las
+facturas de 2026 van `AA` + cuatro digitos (260000...260464, la ultima del 14/09),
+asi que la primera que se emita desde el panel sera la **260465**.
+
+Antes de esto el panel habria empezado su propia serie `F-2026-0001`, en paralelo a
+la de Factusol: dos numeraciones a la vez para la misma empresa.
+
+`siguiente_numero_venta(fecha)` coge el mayor numero de ese ejercicio y suma uno.
+Cuenta tambien las anuladas, porque un numero gastado no se reutiliza. En enero
+arranca sola con el ejercicio nuevo (270001).
+
+### Ojo mientras convivan Factusol y el panel
+
+Las facturas de Factusol entran en el panel cada hora. Si alguien emite en Factusol y
+en el panel dentro de la misma hora, los dos podrian pedir el 260465. Para que eso no
+pase en silencio hay un **indice unico** sobre el numero de factura: la segunda falla
+con un error en vez de colarse duplicada.
+
+Aun asi, lo sano es **dejar de facturar desde Factusol** en cuanto se empiece a
+facturar desde el panel.
