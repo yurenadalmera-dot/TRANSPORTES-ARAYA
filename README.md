@@ -353,3 +353,62 @@ Supabase respalda la base de datos, pero **no los ficheros de Storage**: restaur
 un backup no devuelve un PDF borrado. El workflow *Araya · DeCA · copia de
 seguridad* deja cada lunes una segunda copia de los DeCA en Google Drive y la anota
 en `deca_copias`; `v_deca_sin_copia` dice cuáles faltan.
+
+## El precio del gasoil en Fuerteventura
+
+En **Repostajes**, encima de la lista de siempre, aparece el gasoleo A de la isla:
+el precio medio, la gasolinera mas barata y la mas cara, y lo que te ahorras
+repostando 400 litros en la barata en vez de al precio medio. El boton *Ver todas*
+abre el detalle gasolinera por gasolinera con direccion y horario.
+
+Los precios son los oficiales del Ministerio y los trae solos un automatismo cada
+manana a las 07:30 (workflow `Araya · Precio del gasoil en Fuerteventura`). Se
+quedan guardados en `precios_carburante`, una foto por dia, asi que con el tiempo
+se puede mirar la evolucion. La tarjeta lee de `v_gasoil_hoy`.
+
+A dia de hoy son 26 gasolineras entre Antigua, La Oliva, Pajara, Puerto del Rosario
+y Tuineje.
+
+## 4gflota
+
+En **Flota e ITV** hay un boton *Abrir 4gflota* que lleva a
+`https://arayafranquiz.4gflota.com/` en una pestana nueva, con el usuario de 4gflota
+de siempre. Los kilometros y las posiciones **no** entran solos en el panel todavia:
+para eso harian falta las credenciales de su API.
+
+Debajo, un aviso recoge los vencimientos que la pantalla no miraba antes: tacografo,
+tarjeta de transporte y ADR, vencidos o a menos de 45 dias. La ITV y el seguro los
+sigue avisando la pantalla de siempre.
+
+## Los vencimientos de cobro de cada cliente
+
+Pantalla nueva **Vencimientos de cobro**, en el bloque de Ventas. Es la lista de
+trabajo para ir poniendo, cliente a cliente, los dias de vencimiento, la forma de
+pago, el dia fijo de pago y el correo para los avisos.
+
+No salen los 1.255 clientes: salen solo los que han facturado en los ultimos 24
+meses, ordenados por lo que facturan, que son los que de verdad importan. La columna
+**Como paga de verdad** es la mediana de lo que ese cliente ha tardado en pagar sus
+ultimas facturas, para que los dias se pongan con criterio y no a ojo. Cuando hay
+historial suficiente (3 facturas cobradas o mas) el panel propone un plazo y se pone
+con un solo boton.
+
+De partida solo 12 clientes tenian condiciones puestas, sobre 2,8 millones de euros
+facturados en 24 meses sin plazo definido.
+
+### Dos cosas que estaban rotas
+
+El boton *Condiciones de cobro* de la ficha de cliente y el *Editar* de la lista
+**no hacian nada**. Buscaban al cliente en la lista que el panel lleva en memoria, y
+ahi no estaban todos: PostgREST corta las respuestas a 1.000 filas y hay 1.255
+clientes, asi que los 255 ultimos por orden alfabetico (de *PREFABRICADOS LA
+ANTIGUA* a *ZUNINDA*) eran invisibles. Entre ellos 32 que facturan, con 520.693 €
+en 24 meses.
+
+Arreglado por los dos lados:
+
+- El boton ya no depende de esa lista: si el cliente no esta cargado, lo va a buscar
+  por su id y abre la ventana igual.
+- Los clientes se cargan por paginas (`restPag`), asi que entran los 1.255. Esto
+  tambien arregla los desplegables de cliente de albaranes y facturacion, donde esos
+  255 tampoco aparecian.
