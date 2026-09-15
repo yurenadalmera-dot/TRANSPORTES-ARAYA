@@ -488,3 +488,66 @@ con un error en vez de colarse duplicada.
 
 Aun asi, lo sano es **dejar de facturar desde Factusol** en cuanto se empiece a
 facturar desde el panel.
+
+## Las facturas rectificadas (los abonos de Factusol)
+
+En el panel salian como **pendientes de cobro** 401.628 € cuando muchas de esas
+facturas estaban abonadas en Factusol desde hace anos. No era un fallo de importacion:
+el panel nunca miro el estado que Factusol le pone a cada factura.
+
+### Donde estan los abonos
+
+No hay tabla de abonos en Factusol. Se probaron las nueve habituales (`F_ABO`, `F_LAB`,
+`F_ABV`, `F_ABC`, `F_RFA`, `F_LRF`, `F_FAB`, `F_DEV`, `F_LDV`) y todas vienen vacias.
+Lo que hay es el campo **`ESTFAC`** en la cabecera de la factura, y a veces una nota a
+mano en la referencia: *"ABONO 60"*, *"ABONADA EL 18/04/23"*, *"DUPLICADA"*,
+*"ABONO 0100197 NUEVA FAC. 230123"*.
+
+Los estados, contrastados contra los cobros reales de `F_COB`:
+
+| ESTFAC | Que es | Comprobacion |
+|---|---|---|
+| 0 | Pendiente | 94,5 % sin cobrar |
+| 1 | Cobro parcial | 25 de 30 con cobro a medias |
+| 2 | Cobrada | 7.610 cobradas del todo |
+| 3 y 4 | Abonada / anulada | 93-97 % sin cobrar nunca |
+
+### Rectificada no es cobrada
+
+Un abono es una **rectificacion**: la factura se anula y normalmente se vuelve a emitir
+en otra. Marcarlas como cobradas diria que entro un dinero que no entro, e inflaria los
+ingresos. Marcarlas como incobrables diria que se perdio, y tampoco: se rehizo.
+
+Por eso `facturas_venta` tiene ahora el estado **`rectificada`**, con su fecha, el motivo
+copiado de la nota de Factusol y el `estfac_factusol` de origen. No cuenta como pendiente
+ni como cobrada. No se borra nada y se puede deshacer con `marcar_rectificada()`.
+
+Las seis vistas que deciden que es pendiente (`v_panel`, `v_cliente_ficha`,
+`v_cobros_pendientes`, `v_facturas_venta`, `v_tesoreria`, `v_clientes_vencimientos`)
+excluyen las rectificadas.
+
+### Que se hace solo
+
+`Araya · Rectificadas de Factusol` corre **cada noche a las 04:30**: lee de Factusol el
+estado de las facturas de los tres ultimos ejercicios y marca las que se hayan abonado.
+Si en Factusol devuelven una a pendiente, aqui vuelve sola. Es idempotente.
+
+La primera pasada contra Factusol en vivo actualizo 169 estados, devolvio 16 a pendiente
+(el espejo estaba desfasado) y marco 2 nuevas.
+
+Un detalle de la API de Factusol: **`CargaTabla` devuelve vacio si se le pide una tabla
+sin filtro**. Hay que acotar siempre, aunque sea por rango de fechas.
+
+### Como queda
+
+| | Antes | Ahora |
+|---|---|---|
+| Pendiente de cobro | 401.628 € (265 facturas) | **253.320 € (171 facturas)** |
+| Rectificadas | — | 142.929 € (99 facturas) |
+| Cartera antigua | 722.848 € | 722.848 € |
+
+De las 99 rectificadas, 75 lo dicen con todas las letras en la nota de Factusol. Las
+otras 24 estan en estado 3 o 4 sin nota, o con una nota que no usa la palabra abono
+("nueva 210285", "POR OTRA EMITIDA EN ABRIL DE 2023", "DUPLICADA", "ANULAR POR SEPARAR").
+Se ven todas en `v_rectificadas`, con su motivo, por si alguna hay que devolver a
+pendiente.
