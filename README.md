@@ -959,3 +959,38 @@ el riesgo de corregir la copia que no se ejecuta y creer que ya esta.
 dentro de otras funciones (los generadores de PDF, el canvas de la firma y los cargadores de
 librerias), asi que cada una vive en su propio ambito. Y no hay **ningun** `var` de primer
 nivel repetido.
+
+## 16/09/2026 — Compras de Factusol: donde viven
+
+Para traer las facturas de proveedor anteriores a 2026 hay que saber primero en que tablas
+las guarda Factusol. El panel hoy solo tiene compras de 2026 (1.265 facturas, 837.438 €);
+de 2023, 2024 y 2025 hay **15 facturas sueltas** en total, o sea que practicamente todo el
+historico de compras esta sin traer.
+
+Se monto una sonda de **solo lectura** (`Araya · Factusol · buscar las compras`,
+workflow `PTzcf1j881ckO7OQ`) que prueba nombres de tabla y filtros. Primera tanda:
+
+| Tabla | Que es | Filas | Filtro que funciona |
+|---|---|---|---|
+| `F_PRO` | proveedores | 1.087 | `CODPRO >= 0` |
+| `F_LFR` | **lineas de facturas recibidas** | 28.507 | `CODLFR >= 0` |
+| `F_PAG` | pagos | 1 | `CODPAG >= 0` |
+
+`F_FAP`, `F_LFP`, `F_ALP`, `F_LAP`, `F_PED`, `F_LPE`, `F_FPR`, `F_REC`, `F_FRP`, `F_LRP`,
+`F_ACR` y `F_GAS` no devuelven nada.
+
+O sea que las compras siguen la misma pauta que las ventas (`F_FAC` cabecera + `F_LFA`
+lineas): **`F_LFR` son las lineas** y falta localizar la cabecera, que por el patron deberia
+llamarse `F_FRE`. Sus columnas son las mismas que las de ventas con el sufijo cambiado:
+`TIPLFR CODLFR POSLFR ARTLFR DESLFR CANLFR PRELFR TOTLFR IVALFR DOCLFR ...`.
+
+Dos cosas que conviene saber de paso:
+
+- En Factusol hay **1.087 proveedores** y en el panel **222**. De esos 222, solo 35 tienen
+  CIF. Al traer las compras conviene traer tambien la ficha de proveedor.
+- `F_PAG` tiene **una sola fila**, de 2017: los pagos a proveedores no se llevan en Factusol.
+  Asi que del historico se podra traer la factura, pero no si esta pagada.
+
+**Pendiente:** confirmar la cabecera y montar el volcado. Y una nota aparte: la contrasena de
+Factusol esta escrita dentro del codigo de los workflows de n8n, en vez de en una credencial.
+No esta en este repositorio y no la voy a escribir aqui, pero conviene moverla.
