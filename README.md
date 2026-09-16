@@ -726,3 +726,59 @@ registrado.
 
 **Lo que todavia no se puede:** volver a adjuntar el comprobante a un cobro ya registrado.
 Si la subida falla, el cobro esta bien pero el justificante se queda fuera.
+
+## Una factura no se puede cobrar dos veces
+
+Cuando se cargan los movimientos del banco y se concilian, el reparto puede ir contra una
+factura **que ya tenia el cobro anotado a mano**. `sugerir_reparto` lo detecta y propone
+enlazar el cobro existente ("ya estaba anotado el DD/MM/YYYY: se enlaza, no se crea otro
+cobro"), pero nada obligaba a aceptar esa sugerencia: si se concilia contra la factura sin
+enlazar, `conciliar_reparto` **crea un segundo cobro** y como `importe_cobrado` es la suma
+de todos los cobros, la factura se queda al doble. La rama de nominas ya tenia ese tope;
+la de cobros no.
+
+Y no era teorico: **24 facturas ya estaban cobradas de mas, por 32.640 €**, diez de ellas
+con varios cobros.
+
+Ahora hay un disparador en `cobros` (`cobros_sin_pasarse`) que impide que la suma de los
+cobros de una factura pase de su total. El mensaje dice que hacer:
+
+> La factura 260328 es de 1.490,65 EUR y ya tiene anotado 1.490,65 EUR del 16/09/2026. Con
+> este cobro se quedaria en 2.981,30 EUR, mas de lo que vale. Si el ingreso del banco es el
+> de ese cobro, enlazalo en vez de anotar uno nuevo.
+
+Solo salta cuando la cosa **empeora**, para no bloquear el arreglo de las 24 que ya venian
+mal del historico. Probado: el cobro completo entra, el segundo igual se rechaza, pasarse
+por 5 € tambien se rechaza, y completar a plazos (400 + 670 de 1.070) sigue funcionando.
+
+## Adjuntar el comprobante a un cobro ya hecho
+
+En la ventana de cobros de una factura, los cobros que no tienen justificante salen ahora
+con un boton **Adjuntar**. Abre el selector de ficheros, sube el documento y lo engancha al
+cobro con `adjuntar_comprobante_cobro()`. Usa la misma subida que el registro de cobros, asi
+que si la sesion esta caducada la renueva y reintenta sola.
+
+## Presupuestos no funcionaba: tres modulos peleandose por los mismos nombres
+
+El modulo de presupuestos se anadio el ultimo y usa nombres muy genericos que ya estaban
+cogidos:
+
+| Nombre | Lo usaba | Y tambien |
+|---|---|---|
+| `PR` | Prestamos | Presupuestos |
+| `carga()` | Compensaciones | Presupuestos |
+| `_cn()` | otro modulo | Presupuestos |
+| `_d2()` | otro modulo | Presupuestos |
+
+En JavaScript la ultima declaracion gana, asi que `carga()` era siempre la de presupuestos
+(y Compensaciones se quedaba cargando para siempre), mientras que `PR` lo tocaban los dos
+modulos a la vez y se corrompian el estado mutuamente.
+
+Arreglado renombrando **solo lo de presupuestos** dentro de su tramo del fichero:
+`PR` -> `PRE`, `carga(` -> `cargaPre(`, `_cn(` -> `_cnPre(`, `_d2(` -> `_d2Pre(`. Son 84 + 6
++ 4 + 23 sustituciones, **+183 bytes exactos** y sin un solo cambio en parentesis, llaves ni
+comillas: un renombrado puro. Cada modulo recupera sus nombres.
+
+**La leccion, que ya salio con el menu:** estos modulos se escribieron por separado y
+comparten un unico ambito global. Antes de anadir otro, conviene mirar que el nombre no
+este cogido.
