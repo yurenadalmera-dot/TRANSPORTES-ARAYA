@@ -782,3 +782,50 @@ comillas: un renombrado puro. Cada modulo recupera sus nombres.
 **La leccion, que ya salio con el menu:** estos modulos se escribieron por separado y
 comparten un unico ambito global. Antes de anadir otro, conviene mirar que el nombre no
 este cogido.
+
+---
+
+## 16/09/2026 — El panel daba "Error al cargar (500)"
+
+Sintoma: la pantalla del panel se quedaba en blanco con `Error al cargar (500)` y un boton
+de Reintentar. A veces cargaba y a veces no, mas o menos una de cada dos.
+
+**Que pasaba.** El arranque del panel pide varias listas a la vez y basta que **una** falle
+para que no se pinte nada. La que fallaba era `v_movimientos` (los movimientos del banco):
+tardaba mas de los 8 segundos que Supabase da como maximo a una consulta y el servidor la
+cortaba. En el log de Postgres se veia tal cual: `canceling statement due to statement timeout`.
+
+**Por que tardaba tanto.** La vista `v_movimientos_banco` llamaba a
+`sugerencias_conciliacion()` **cuatro veces por cada movimiento** (una por columna: cuantas
+sugerencias hay, cual es la mejor, de quien es y que numero tiene). Y cada llamada recorria
+**entera** la tabla `facturas_venta`, que desde que se volco Factusol tiene 11.538 filas,
+porque el filtro `abs(round(total,2) - importe) <= tolerancia` no lo puede aprovechar ningun
+indice. Con 58 movimientos sin conciliar salian 232 barridos completos de la tabla: unas
+200.000 paginas de disco. Con la cache caliente iba; en frio, no llegaba.
+
+**Arreglado en dos pasos:**
+
+1. **Indices por importe** (`idx_fv_total_pendiente`, `idx_f_total_pendiente`) y, en
+   `sugerencias_conciliacion()`, un filtro de rango delante del original
+   (`total between importe - tolerancia - 0,01 and importe + tolerancia + 0,01`). Se deja
+   tambien la condicion de siempre, asi que el resultado es identico; la holgura de 0,01 es
+   mayor que el maximo error posible del redondeo, de modo que no puede caerse ninguna fila
+   que antes entrara. La busqueda pasa de barrido completo a indice: **4,4 ms -> 0,14 ms**.
+2. **Una sola llamada por movimiento** en `v_movimientos_banco`: las cuatro subconsultas se
+   sustituyen por un `LEFT JOIN LATERAL` con `count(*) FILTER`, `max()` y `array_agg(... ORDER BY)`.
+
+Comprobado que no cambia ni un dato: se calcularon las cuatro columnas con la formulacion
+antigua y con la nueva para todos los movimientos y se compararon en los dos sentidos,
+**0 diferencias**. La consulta que hace el panel pasa de ~200.000 paginas a **1.362**.
+
+## 16/09/2026 — Aviso de seguridad de Supabase
+
+Llego el correo "Action required: security vulnerabilities detected in your projects", con
+fecha de deteccion **13/09**. Senalaba dos proyectos:
+
+- **araya-operativa**: ya estaba resuelto. El agujero (tablas y vistas legibles sin iniciar
+  sesion) se cerro el 15/09; hoy el analizador ya no lo lista.
+- **asesoria-ia**: quedaba abierta la tabla `public._respaldo_funciones`, una copia interna
+  de definiciones de funciones. El rol `anon` tenia sobre ella lectura, escritura y borrado,
+  es decir que cualquiera con la URL del proyecto podia vaciarla. Se le ha quitado el permiso
+  a `anon` y a `authenticated` y se le ha activado RLS. No la usa ninguna pantalla.
