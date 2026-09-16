@@ -829,3 +829,47 @@ fecha de deteccion **13/09**. Senalaba dos proyectos:
   de definiciones de funciones. El rol `anon` tenia sobre ella lectura, escritura y borrado,
   es decir que cualquiera con la URL del proyecto podia vaciarla. Se le ha quitado el permiso
   a `anon` y a `authenticated` y se le ha activado RLS. No la usa ninguna pantalla.
+
+## 16/09/2026 — Fecha y modo de pago al pagar una factura de proveedor
+
+Antes, el boton "Registrar pago" decia *"se marcara como pagada con fecha de hoy"* y pagaba
+sin preguntar nada: siempre con la fecha del dia y siempre contra el banco. Ahora la ventana
+pide **fecha de pago** (no deja poner una futura, ni anterior a la propia factura) y **modo
+de pago** (transferencia, domiciliado, tarjeta, efectivo, confirming). Los dos son
+obligatorios; si falta alguno no se manda nada al servidor.
+
+La fecha viene con el dia de hoy puesta y el modo aparece ya elegido si la factura o el
+proveedor ya tenian forma de pago, para no tener que escribirlo cada vez.
+
+El modo decide de donde sale el dinero en el asiento: **efectivo -> caja (570)**, el resto
+-> banco (572). Antes esa decision se tomaba con la forma de pago que tuviera guardada la
+factura, que en 1.196 de 1.280 facturas estaba vacia.
+
+`pagar_factura_compra` pasa a recibir `p_forma_pago` y a guardarla en la factura. Probado
+contra la base: rechaza fecha futura, rechaza un modo inventado, y un pago en efectivo
+queda con cuenta 57000000, estado pagada, fecha y forma guardadas y su asiento. La prueba
+se deshizo entera.
+
+## 16/09/2026 — El cierre de seguridad se estaba deshaciendo solo
+
+Al recrear `pagar_factura_compra` aparecio que el rol `anon` (el de quien no ha iniciado
+sesion) volvia a tener permiso sobre ella. La causa: Supabase deja configurados unos
+**permisos por defecto** que conceden a `anon` acceso total a **cada tabla, funcion o
+secuencia nueva** del esquema `public`. Es decir, el cierre del 15/09 duraba hasta que
+alguien creara cualquier cosa. Ademas Postgres concede por su cuenta `EXECUTE` a PUBLIC en
+toda funcion nueva, y PUBLIC incluye a `anon`.
+
+Corregido en los dos sitios:
+
+```sql
+alter default privileges for role postgres in schema public revoke all on tables from anon;
+alter default privileges for role postgres in schema public revoke all on functions from anon;
+alter default privileges for role postgres in schema public revoke all on sequences from anon;
+alter default privileges for role postgres revoke execute on functions from public;
+```
+
+Comprobado creando una tabla y una funcion de prueba: nacen cerradas. Se cerraron tambien
+`eur_txt` y `tg_cobros_sin_pasarse`, creadas ayer y que habian nacido abiertas. Ahora mismo
+`anon` no alcanza **ninguna** tabla ni vista (0 de 146) ni **ninguna** funcion del negocio;
+las 31 que quedan son operaciones matematicas de la extension `pg_trgm`. `authenticated`
+conserva sus 146 tablas/vistas y 173 funciones.
