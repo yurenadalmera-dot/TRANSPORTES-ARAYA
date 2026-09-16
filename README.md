@@ -924,3 +924,38 @@ Probado contra la base, con las facturas de verdad y deshaciendo despues:
 2,00 hay que repartirlos entre bono social y alquiler de contador mirando el papel. No me
 los he inventado. La de la ITV ya esta arreglada: los 4,18 se pasaron de "portes" a su
 concepto (solo esa factura; las otras tres que usan "portes" ya cuadraban y ya tienen asiento).
+
+## 16/09/2026 — Auditoria de nombres repetidos en el panel
+
+Despues de que el mismo fallo saliera dos veces (el menu y luego `PR`/`carga`), se paso una
+revision a todo el ambito global del panel: cada `function X(` y cada `var X =` de primer
+nivel. Resultado:
+
+**Choque de verdad, en marcha:** Compensaciones y Presupuestos declaraban las dos un
+`sync()`, un `totales()` y un `guardar()`. Gana la ultima, o sea las de Presupuestos, asi
+que **el boton "Guardar" de Compensaciones estaba llamando al guardar de Presupuestos** —
+y `totales()` hacia `PRE.form.lineas` sobre un `PRE.form` vacio. Arreglado renombrando solo
+las de Presupuestos dentro de su tramo: `syncPre`, `totalesPre`, `guardarPre`. Son 12
+sustituciones, **+36 bytes exactos** y ni un cambio en parentesis, llaves ni comillas.
+
+Conviene notar que **estas tres no eran la causa del fallo de Presupuestos** que se arreglo
+antes: como ganaban las suyas, Presupuestos funcionaba y la rota era Compensaciones.
+
+**Codigo muerto, que era una trampa:** `albLee` y `_subeComprobante` estaban declaradas dos
+veces. En los dos casos la viva (la ultima) es la buena:
+
+- `albLee`: la viva lee ademas obra, origen, destino, tipo de carga, LER, mercancia y peso,
+  y las lineas por servicio (`.a_sid`) *y* por material (`.a_mid`). Es un superconjunto de
+  la muerta, asi que no habia fallo visible.
+- `_subeComprobante`: la viva es la que reintenta con la sesion renovada cuando el servidor
+  responde 401 o 403 — el arreglo del "error al subir copia del ingreso". La muerta era la
+  anterior, sin reintento.
+
+Se han borrado las dos muertas (**-1.586 bytes**, con todos los delimitadores cuadrando:
+-72/-72 parentesis, -12/-12 llaves, -9/-9 corchetes). No cambia nada en marcha, pero quita
+el riesgo de corregir la copia que no se ejecuta y creer que ya esta.
+
+**Lo que queda repetido no es un choque:** `col`, `fec`, `ini` e `intenta` estan declaradas
+dentro de otras funciones (los generadores de PDF, el canvas de la firma y los cargadores de
+librerias), asi que cada una vive en su propio ambito. Y no hay **ningun** `var` de primer
+nivel repetido.
