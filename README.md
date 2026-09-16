@@ -1083,3 +1083,65 @@ esos los calcula el servidor en sus vistas.
 El resto de peticiones estan bien: o van filtradas (`=eq.`, `=in.`), o llevan `limit`, o su
 tabla no llega a 1.000 filas. La unica vista que pasa del tope es `v_facturas_venta` (11.538),
 y sus dos llamadas ya llevaban limite.
+
+## 16/09/2026 — El historico de compras, ya en el panel
+
+Volcadas las **6.480 facturas** de proveedor de 2023 a 2025 (2.625.067 €) desde el espejo a
+las facturas del panel. Los proveedores pasan de **222 a 505**.
+
+**No generan asiento**: son anteriores al inicio de la contabilidad (01/01/2026), asi que
+entran como historico informativo. Comprobado: **0 asientos** creados por el volcado.
+
+El estado sale de Factusol: **443 facturas quedan pendientes de pago**, y se pueden pagar
+desde el panel con su fecha, su modo y su comprobante, como cualquier otra.
+
+| | Facturas | Importe |
+|---|---|---|
+| 2026, lo de siempre | 118 | 393.459,01 € |
+| Historico · proveedores | 275 | 146.185,59 € |
+| Historico · impuestos y organismos | 50 | 267.492,72 € |
+| **Total pendiente** | **443** | **807.137,32 €** |
+
+### Lo que se ha dejado fuera, y por que
+
+Solo **5 apuntes, los capitales de prestamo** (Caixa y Transolver, 358.931,20 €). En Factusol
+estan dados de alta como si fueran facturas de proveedor, con las condiciones escritas en el
+numero: *"PRESTAMO CAIXA SG MIXTA 84668,40€//VTO14.02.2028"*, *"PRESTAMO 521- IVECO"*. Esa
+misma deuda ya se amortiza en el modulo de Prestamos, asi que meterla ademas como factura
+pendiente la contaria **dos veces**.
+
+Siguen en el espejo (`factusol_compras`, con `clase = 'prestamo'`), asi que traerlas es
+volver a lanzar el volcado quitando ese filtro.
+
+En cambio **si entran las 10 cuotas de leasing de SG Equipment Finance** (~1.175,95 €/mes, ya
+pagadas): esas son facturas de verdad, no capital de prestamo.
+
+Los **impuestos y organismos si entran**, y pendientes. No son compras, pero pueden ser deuda
+real. Conviene mirarlos: 39 recibos del Cabildo sin pagar desde 2023 tiene toda la pinta de
+que simplemente nunca se marcaron como pagados en Factusol.
+
+### Tres fallos que aparecieron al volcar
+
+Salieron en las pruebas pequenas, antes de tocar nada de verdad:
+
+1. **`forma_pago` no admitia "confirming"**. El desplegable de Registrar pago lo ofrecia y la
+   funcion lo aceptaba, pero la tabla tiene un CHECK que solo admitia transferencia,
+   domiciliado, efectivo, tarjeta y compensacion: **elegir Confirming habria dado error al
+   guardar**. Anadido a la factura y al proveedor.
+2. **`categoria` del proveedor** tiene su propio CHECK (proveedor / impuesto / suministro /
+   financiacion / otro). El alta automatica escribia 'historico' y reventaba.
+3. **`VENFRE` no es una fecha.** Es el calendario de pagos en texto:
+   `"20/02/2023;000000000093,32;"`. Castearlo a date tiraba el volcado entero. Ahora se lee
+   con `fecha_venfre()`, que coge la fecha de delante si la trae y devuelve nada si no.
+
+Las tres abortaron la transaccion sin dejar nada a medias, que es justo para lo que estaba
+la prueba en seco.
+
+### Comprobado despues del volcado
+
+- **0 facturas descuadradas** (base + IGIC + conceptos - retencion = total).
+- **0 sin proveedor** y **0 con proveedor sin subcuenta contable**.
+- **0 coladas de 2026** (el corte funciono).
+- **6.480 referencias de Factusol distintas**: ni una repetida, no se puede traer dos veces
+  la misma factura.
+- La pantalla de incidencias sigue con **las 2 de Endesa** y ninguna mas.
