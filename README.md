@@ -873,3 +873,54 @@ Comprobado creando una tabla y una funcion de prueba: nacen cerradas. Se cerraro
 `anon` no alcanza **ninguna** tabla ni vista (0 de 146) ni **ninguna** funcion del negocio;
 las 31 que quedan son operaciones matematicas de la extension `pg_trgm`. `authenticated`
 conserva sus 146 tablas/vistas y 173 funciones.
+
+## 16/09/2026 — Facturas que no cuadraban: Endesa e ITV
+
+**El problema, tal cual estaba.** Para contabilizar una factura de proveedor el panel
+exige que `base imponible + IGIC - retencion = total`. Si no cuadra no genera asiento y la
+factura se queda en la lista de incidencias, pendiente justo por esa diferencia. Habia
+tres asi:
+
+| Factura | Proveedor | Base | IGIC | Total | Falta |
+|---|---|---|---|---|---|
+| 000003740/35142026F | SGS ITV | 52,08 | 3,65 | 59,91 | 4,18 |
+| N26CNO003884573 | ENDESA OFICINA TIRBA | 60,32 | 5,14 | 67,46 | 2,00 |
+| N2BCONO01482161 | ENDESA OFICINA TIRBA | 53,88 | 2,01 | 57,89 | 2,00 |
+
+En la de la ITV los 4,18 de **tasa de trafico** estaban metidos en el campo "portes", que
+no entra en el cuadre. En las de Endesa los 2,00 de **financiacion del bono social y
+alquiler de contador** no estaban en ningun sitio.
+
+**Por que no bastaba con sumar "portes" al cuadre.** De las cuatro facturas del panel que
+usan ese campo, **tres ya cuadran sin el**, porque ahi el importe si esta dentro de la base
+imponible (son portes de verdad, de BLUMAQ, y llevan su IGIC). Sumarlo habria descuadrado
+lo que hoy cuadra. El campo se estaba usando con dos significados distintos.
+
+**Lo que se ha hecho.** Una tabla `facturas_conceptos`: importes que van al total pero **no**
+a la base ni al IGIC, cada uno con **su propia cuenta de gasto**. Y `proveedores_conceptos`,
+una plantilla por proveedor para que al abrir la factura aparezcan ya ofrecidos los
+conceptos que ese proveedor suele traer (las tres Endesa y las dos ITV vienen sembradas).
+
+En el panel, la ventana de la factura lleva ahora una seccion de conceptos (concepto,
+importe y cuenta, con botones para anadir los del proveedor) y un campo **Referencia /
+contrato**, para separar las cuentas de gasto por punto de suministro. El aviso de debajo
+cuenta ya los conceptos y dice cuanto falta por desglosar.
+
+Por dentro: `crear_factura_compra` y `editar_factura_compra` guardan los conceptos **en la
+misma llamada** y antes de comprobar el cuadre (si se guardasen aparte, la comprobacion
+rechazaria la factura antes de que existieran), y `generar_asiento_factura` los lleva al
+asiento, cada uno a su cuenta. Ademas ahora se niega a crear un asiento descuadrado.
+
+Probado contra la base, con las facturas de verdad y deshaciendo despues:
+
+- Sin desglosar, Endesa se rechaza con el mensaje exacto: *base 53,88 + IGIC 2,01 + otros
+  conceptos 0,00 - retencion 0 = 55,89, pero el total pone 57,89*.
+- Con el desglose, sale de incidencias y el asiento queda: 628 gasto 53,88 · 628 bono
+  social · 628 alquiler de contador · 472 IGIC 2,01 · 410 proveedor 57,89 al haber. Cuadra.
+- La de la ITV, con la tasa en su concepto: 600 gasto 52,08 · **631 Tasas de trafico 4,18** ·
+  472 IGIC 3,65 · 400 proveedor 59,91. Cuadra, y la tasa deja de ensuciar la cuenta de compras.
+
+**Lo unico que queda a mano:** las dos facturas de Endesa siguen en incidencias porque los
+2,00 hay que repartirlos entre bono social y alquiler de contador mirando el papel. No me
+los he inventado. La de la ITV ya esta arreglada: los 4,18 se pasaron de "portes" a su
+concepto (solo esa factura; las otras tres que usan "portes" ya cuadraban y ya tienen asiento).
