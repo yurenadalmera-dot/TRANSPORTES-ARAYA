@@ -994,3 +994,63 @@ Dos cosas que conviene saber de paso:
 **Pendiente:** confirmar la cabecera y montar el volcado. Y una nota aparte: la contrasena de
 Factusol esta escrita dentro del codigo de los workflows de n8n, en vez de en una credencial.
 No esta en este repositorio y no la voy a escribir aqui, pero conviene moverla.
+
+## 16/09/2026 — Compras de Factusol: traidas al espejo
+
+La cabecera es **`F_FRE`** (facturas recibidas) y sus lineas **`F_LFR`**, igual que `F_FAC` /
+`F_LFA` en ventas. Montado el volcado (`Araya · Factusol · traer las compras`, workflow
+`A59OuceecmxpOcqA`), que llena `factusol_compras`, `factusol_compras_lineas` y
+`factusol_proveedores`. **No toca las tablas operativas.**
+
+Traido de 2003 a 2025:
+
+| Ano | Facturas | Lineas | Importe |
+|---|---|---|---|
+| 2023 | 2.304 | 26.846 | 1.142.765,45 € |
+| 2024 | 2.070 | 25.138 | 815.736,64 € |
+| 2025 | 2.153 | 25.084 | 1.037.049,44 € |
+| **Total** | **6.527** | **77.068** | **2.995.551,53 €** |
+
+De 2003 a 2022 no hay nada: en Factusol las compras empiezan en 2023. Tambien se trajeron
+**1.055 fichas de proveedor** (el panel tenia 222).
+
+El ejercicio forma parte de la clave del espejo. Factusol guarda un fichero por ejercicio y
+los codigos se repiten entre ellos; sin eso, el `on conflict do nothing` habria descartado
+facturas distintas con el mismo codigo, y sin avisar.
+
+**Calidad de los datos: buena.** Las **6.527 cuadran** (`base + IGIC - retencion = total`),
+ninguna trae portes ni financiacion aparte, 76 llevan retencion, 100 vienen sin numero de
+factura y hay 455 proveedores distintos.
+
+### Lo que hay pendiente de pago, y por que no es lo que parece
+
+`ESTFRE` funciona igual que en ventas: 0 pendiente, 1 pago parcial, 2 pagada. Salen **321
+facturas sin pagar por 767.400,97 €**. Pero mirando quien las emite:
+
+| | Facturas | Importe |
+|---|---|---|
+| Prestamos y financiacion (Caixa, Transolver) | 5 | 358.931,20 € |
+| Impuestos y organismos (AEAT, Cabildo, Ayuntamiento...) | 48 | 267.192,72 € |
+| **Proveedores de verdad** | **268** | **141.277,05 €** |
+
+Los cinco primeros son **prestamos metidos como si fueran facturas de proveedor**, con los
+datos del prestamo escritos en el nombre ("PRESTAMO CAIXA ... VTO 22.10.2029"). Esos ya se
+llevan en el modulo de Prestamos: si entran como facturas pendientes, la deuda se cuenta dos
+veces. Los impuestos tienen su propia pantalla.
+
+Asi que **lo realmente pendiente de pagar a proveedores son 141.277,05 € en 268 facturas**.
+
+**Importante, y por eso no se ha volcado todavia a `facturas`:** `F_PAG` (los pagos) tiene
+una sola fila, de 2017. O sea que en Factusol **no se registran los pagos a proveedores**, y
+`ESTFRE` es el unico indicio de si algo esta pagado; no hay forma de contrastarlo como se
+hizo en ventas contra `F_COB`.
+
+La funcion `importar_compras_factusol(usuario, lote)` esta escrita y probada: da de alta el
+proveedor si no existe, mete la factura como historico **sin asiento** (son anteriores al
+inicio contable) y respeta el estado de Factusol. Falta decidir que hacer con los prestamos y
+los impuestos antes de ejecutarla.
+
+Otro aviso: el panel pide las facturas de compra **sin paginar**, y PostgREST corta a 1.000
+filas. Con las 1.280 de ahora ya se esta truncando; al meter el historico habria que pasar
+esa carga a `restPag` o filtrarla, o las facturas del dia quedarian escondidas detras del
+historico.
