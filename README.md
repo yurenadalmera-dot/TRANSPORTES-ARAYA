@@ -688,3 +688,41 @@ Las 31 funciones que `anon` todavia puede ejecutar son de la extension `pg_trgm`
 iniciada, alguien podria pasar el id de otro usuario y actuar en su nombre. Lo correcto es
 sacar la identidad del propio token (`auth.uid()`) en vez de creerse el parametro. No se ha
 tocado porque afecta a las 170 funciones y hay que hacerlo con calma.
+
+## El comprobante del cobro tiraba el cobro entero
+
+Al registrar un cobro con copia del ingreso adjunta salia un error crudo de Supabase:
+
+    {"statusCode":"403","error":"Unauthorized",
+     "message":"\"exp\" claim timestamp check failed","code":"AccessDenied"}
+
+Eso es que el token de sesion estaba caducado. Pero el problema de verdad no era el
+mensaje feo, sino el orden de las cosas:
+
+    subir el comprobante  ->  registrar el cobro
+
+Encadenados. Si la subida fallaba, la promesa se rompia y **el cobro no llegaba a
+registrarse**. O sea que no se perdia el adjunto: se perdia el cobro entero y habia que
+volver a teclearlo.
+
+Arreglado por los dos lados:
+
+- **Reintento con la sesion renovada.** `_subeComprobante` ya llamaba a `auth()`, pero
+  `auth()` solo renueva si el token va a caducar en menos de 120 segundos y el refresco
+  funciona; si `renovar()` fallaba, devolvia el token muerto sin decir nada. Ahora, si el
+  almacen responde 401 o 403, se fuerza la renovacion y se reintenta la subida una vez.
+- **El cobro se registra igual.** La subida va en su propio `catch`: si no se puede subir,
+  se sigue adelante con el comprobante a nulo y el aviso lo dice sin jerga: *"Cobro parcial
+  registrado. Quedan X. El cobro queda guardado, pero el comprobante no se subio porque se
+  habia caducado la sesion"*.
+
+Los motivos se traducen a castellano (`cmpMotivo`): sesion caducada, fichero demasiado
+grande, sin conexion, o el codigo que devuelva el servidor.
+
+Probado con 25 casos: subida normal, sesion caducada que se renueva y acaba subiendo,
+sesion caducada que no se puede renovar, fichero de mas de 15 MB, sin conexion, sin
+adjuntar nada, e importe vacio. En todos los que fallan el adjunto, el cobro queda
+registrado.
+
+**Lo que todavia no se puede:** volver a adjuntar el comprobante a un cobro ya registrado.
+Si la subida falla, el cobro esta bien pero el justificante se queda fuera.
