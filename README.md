@@ -1054,3 +1054,32 @@ Otro aviso: el panel pide las facturas de compra **sin paginar**, y PostgREST co
 filas. Con las 1.280 de ahora ya se esta truncando; al meter el historico habria que pasar
 esa carga a `restPag` o filtrarla, o las facturas del dia quedarian escondidas detras del
 historico.
+
+## 16/09/2026 — El panel se estaba dejando filas por el camino
+
+PostgREST devuelve **como maximo 1.000 filas** por peticion. El panel pedia varias listas
+enteras sin paginar, asi que de las tablas que pasan de ese tope solo llegaba una parte, sin
+ningun aviso: ni error, ni hueco, ni nada. Simplemente faltaban filas.
+
+Repasadas **todas** las peticiones del panel, cruzando cada una con el numero real de filas
+de su tabla. Tres estaban cortando:
+
+| Peticion | Filas reales | Llegaban | Se perdian |
+|---|---|---|---|
+| `cobros` | 7.727 | 1.000 | **6.727** |
+| `facturas` (compras) | 1.280 | 1.000 | 280 |
+| `clientes` | 1.255 | 1.000 | 255 |
+
+Las tres pasan a `restPag`, que las pide por paginas. Y se les anade el `id` al orden: ni la
+fecha ni el nombre desempatan, y sin desempate una misma fila puede salir en dos paginas y
+faltar en otra. Son **+18 bytes** en total y ni un cambio en parentesis ni en comillas.
+
+Lo de `cobros` venia de largo y explica cosas raras: como la lista iba ordenada por fecha
+descendente, se quedaban los 1.000 cobros mas recientes y **desaparecian los antiguos**. Por
+eso a una factura vieja ya cobrada podia no salirle su cobro en pantalla (ni el boton de
+adjuntar el comprobante). Los totales de pendiente de cobro no se veian afectados, porque
+esos los calcula el servidor en sus vistas.
+
+El resto de peticiones estan bien: o van filtradas (`=eq.`, `=in.`), o llevan `limit`, o su
+tabla no llega a 1.000 filas. La unica vista que pasa del tope es `v_facturas_venta` (11.538),
+y sus dos llamadas ya llevaban limite.
