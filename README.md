@@ -644,3 +644,47 @@ no los 104 pequenos de anos anteriores. Ahi es donde merece la pena el esfuerzo,
 prisa. El resto no es imposible (hay que ver si a cada servicio le aplica el ano del
 transporte o los cinco del Codigo Civil, y el deudor tiene que alegar la prescripcion),
 pero eso ya es criterio del abogado.
+
+## Un agujero de seguridad que estaba abierto
+
+Al repasar los avisos de seguridad de Supabase salio algo serio: **cualquiera con la
+direccion del panel podia leer toda la base de datos sin iniciar sesion**.
+
+El mecanismo: la clave publica de Supabase (`anon`) viaja dentro del HTML del panel, que
+es lo normal y por si sola no es un problema, porque lo que protege los datos es el RLS.
+Pero las 65 vistas del panel son *security definer* (pertenecen a `postgres`), asi que
+**se saltan el RLS de las tablas que hay debajo**, y tenian permiso de lectura para `anon`.
+Con esa clave y el nombre de una vista se leian facturas, clientes, empleados y nominas
+sin pasar por el login. Ademas cuatro tablas estaban directamente sin RLS
+(`factusol_raw`, `factusol_contraste`, `factusol_sync_log`, `interes_demora_comercial`),
+y dos de ellas con permiso de escritura y borrado heredado de `PUBLIC`.
+
+Y por el otro lado, las funciones: en Postgres nacen ejecutables por `PUBLIC`, asi que
+**159 funciones estaban al alcance de cualquiera**, entre ellas `borrar_factura`,
+`conciliar_movimiento` o `facturar_albaranes`.
+
+### Que se ha hecho
+
+El panel consulta **siempre** con el token del usuario que ha entrado (rol
+`authenticated`); el rol `anon` solo hace falta para el propio login, que va por
+`/auth/v1` y no toca ninguna de estas tablas. Asi que:
+
+- Retirada la lectura de `anon` en las 146 tablas y vistas. Ahora sin sesion no se ve nada.
+- Retirados los permisos heredados de `PUBLIC`, incluidos los de escritura y borrado.
+- RLS activado en las cuatro tablas que no lo tenian, con politica para `authenticated`
+  y para `n8n_app`.
+- `app_ui_versiones` tenia RLS sin ninguna politica: no entraba nadie, ni el panel. Ya tiene.
+- Retirada la ejecucion de `PUBLIC` y de `anon` en las funciones del negocio, concediendola
+  solo a quien la usa: `authenticated`, `n8n_app` y `service_role`.
+
+Comprobado despues: `anon` no ve **ninguna** tabla ni vista y no puede ejecutar ninguna
+funcion del negocio; `authenticated` conserva las 146 y las 170 funciones, y n8n las suyas.
+Las 31 funciones que `anon` todavia puede ejecutar son de la extension `pg_trgm`
+(similitud de texto): calculo puro, sin acceso a datos.
+
+### Lo que sigue flojo
+
+`exigir_identidad(p_usuario)` recibe el id del usuario **desde el cliente**. Con sesion
+iniciada, alguien podria pasar el id de otro usuario y actuar en su nombre. Lo correcto es
+sacar la identidad del propio token (`auth.uid()`) en vez de creerse el parametro. No se ha
+tocado porque afecta a las 170 funciones y hay que hacerlo con calma.
