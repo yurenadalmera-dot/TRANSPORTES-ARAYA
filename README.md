@@ -1145,3 +1145,34 @@ la prueba en seco.
 - **6.480 referencias de Factusol distintas**: ni una repetida, no se puede traer dos veces
   la misma factura.
 - La pantalla de incidencias sigue con **las 2 de Endesa** y ninguna mas.
+
+## 17/09/2026 — El panel y Tesoreria daban dos deudas distintas
+
+Las dos pantallas dicen "deuda a proveedores" pero **contaban con reglas distintas**:
+
+- **Panel principal**: solo las facturas cuyo proveedor tiene la categoria *exactamente*
+  `'proveedor'`.
+- **Tesoreria** (`v_pagos_pendientes`): todo lo que **no** sea `financiacion` ni `impuesto`.
+
+La diferencia son **1.494,38 €** en 9 facturas de proveedores de categoria `suministro`:
+Endesa, Canaragua, Suministros de Agua La Oliva, el Consorcio de Aguas y Distribuidora
+Electrica Canaria. Agua y luz, o sea deuda a proveedores como cualquier otra, y el panel
+principal no la contaba.
+
+Manda la regla de Tesoreria. El panel pasa a usarla, y ahora los dos dan **245.816,85 €**.
+
+Reparto completo de lo pendiente de pago:
+
+| Categoria del proveedor | Facturas | Importe | Cuenta como deuda a proveedores |
+|---|---|---|---|
+| proveedor | 368 | 244.322,47 € | si |
+| suministro | 9 | 1.494,38 € | si (antes no) |
+| impuesto | 61 | 308.642,13 € | no, tiene su pantalla |
+| financiacion | 2 | 252.767,03 € | no, son prestamos |
+
+**Aparte, dos cosas de los 252.767,03 € de "financiacion":** son dos prestamos dados de alta
+como facturas en el panel (no vienen de Factusol), enlazados a su prestamo por
+`factura_origen`. `v_pagos_pendientes` los descuenta bien para no contar la deuda dos veces.
+Pero uno de ellos, **PRESTAMO CAIXABANK (131.767,03 €), no tiene ni una cuota cargada**: como
+la factura se descuenta y no hay cuotas que la sustituyan, esa deuda **no aparece en ningun
+sitio** del informe de pagos. Conviene cargarle el cuadro de amortizacion.
