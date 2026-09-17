@@ -1176,3 +1176,46 @@ como facturas en el panel (no vienen de Factusol), enlazados a su prestamo por
 Pero uno de ellos, **PRESTAMO CAIXABANK (131.767,03 €), no tiene ni una cuota cargada**: como
 la factura se descuenta y no hay cuotas que la sustituyan, esa deuda **no aparece en ningun
 sitio** del informe de pagos. Conviene cargarle el cuadro de amortizacion.
+
+## 17/09/2026 — Los pedidos a proveedores salen por el correo de la empresa
+
+La credencial de Gmail de n8n ("Araya gmail") estaba mal: en **Client ID** habia un correo
+(`t.arayafranquiz@gmail.com`) en vez de un identificador de Google, que es algo del estilo
+`123456-abcdef.apps.googleusercontent.com`. De ahi el `Error 401: invalid_client`.
+
+En vez de arreglar el OAuth de Google, se cambia el envio al **SMTP de
+`administracion@transportesarayafranquiz.es`**, que ya estaba montado y funcionando (35
+ejecuciones del aviso de cobro, las ultimas correctas). Asi el pedido sale desde la direccion
+de la empresa y no desde una cuenta de gmail, que es lo que toca.
+
+**Ojo con cual era el workflow.** El panel llama a `/araya/pedir`, pero la funcion `acc()` del
+panel reescribe la ruta: `u.replace('/araya/','/araya/v2/')`. O sea que el vivo es
+**`Araya · Panel acciones v2`** (`8H2bo9wmMTjxJGqa`), no el v1. Buscar el texto en el panel
+no bastaba.
+
+### Y de paso, un fallo silencioso feo
+
+El nodo de Gmail tenia `onError: continueRegularOutput`, y el pedido **ya se habia grabado
+como `'enviado'` antes** de mandar el correo. O sea: al pulsar el boton, el correo fallaba, el
+pedido quedaba registrado como enviado, el material se marcaba como pedido y el panel decia
+*"Pedido enviado a ..."*. **El proveedor no se enteraba de nada y tu tampoco.**
+
+Ahora el envio va con `onError: continueErrorOutput` y tiene su propia rama:
+
+- **Sale bien** -> se marca el material como pedido -> `{"ok":true}`.
+- **Falla** -> el pedido vuelve a **`'borrador'`**, el material **sigue por reponer**, y el
+  panel recibe `{"ok":false}` con el motivo. `acc()` lanza el error cuando ve `ok:false`, asi
+  que te sale el aviso en pantalla.
+
+`'borrador'` no es un invento: `pedidos.estado` tiene un CHECK que solo admite
+`borrador / enviado / recibido`.
+
+Ademas el correo lleva `replyTo` y **copia oculta a `administracion@`**, igual que el aviso de
+cobro, asi que queda constancia de cada pedido en el buzon.
+
+**Lo que no se ha probado y por que:** disparar la ruta habria mandado un correo de verdad a
+un proveedor y creado un pedido real. Lo comprobado es el cableado (leido de vuelta del
+workflow ya publicado) y que la credencial SMTP funciona. El primer pedido de verdad sera la
+prueba, y si algo falla ahora **si se ve**.
+
+La credencial "Araya gmail" se queda donde esta, sin usar: ya no la referencia ningun nodo.
