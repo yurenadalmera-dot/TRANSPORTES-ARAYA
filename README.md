@@ -1,15 +1,21 @@
 # Transportes Araya · pendientes de cobro y de pago
 
 Listado diario de **clientes que nos deben dinero** y **proveedores a los que
-debemos**, pensado para mirarlo desde el móvil cada mañana y recibirlo por
-WhatsApp.
+debemos**, que le llega a Yeni **por correo y por WhatsApp** cada mañana, sin
+tener que entrar al panel.
 
-Tres piezas:
+Cuatro piezas:
 
-1. **Panel web** (móvil): totales, reparto por antigüedad y el detalle por
-   cliente y por proveedor, con descarga a Excel.
-2. **Informe diario**: el mismo contenido resumido en un mensaje de WhatsApp.
-3. **Origen de datos intercambiable**: base local propia o la API del SaaS.
+1. **Informe diario**: los dos listados agrupados por cliente y por proveedor,
+   con totales, vencido y antigüedad de la deuda.
+2. **Correo**: el informe en HTML, legible en el móvil, con los dos listados
+   completos adjuntos en CSV para abrirlos en Excel.
+3. **WhatsApp**: el mismo informe resumido, con enlace al panel.
+4. **Origen de datos intercambiable**: base local propia o la API del SaaS.
+
+Trae además un panel web propio (`npm start`), útil como respaldo y para
+descargar los CSV, pero el sitio donde se consulta el detalle es vuestro panel
+de siempre: se enlaza con `URL_PANEL`.
 
 No usa ninguna dependencia externa: solo Node 22 y su SQLite incorporado.
 
@@ -19,7 +25,8 @@ No usa ninguna dependencia externa: solo Node 22 y su SQLite incorporado.
 npm run seed     # crea la base local con datos de ejemplo
 npm start        # abre el panel en http://localhost:3000
 npm run informe  # imprime el listado de hoy en pantalla
-npm test         # 46 pruebas
+npm run enviar   # genera el informe y lo manda por los canales configurados
+npm test         # 59 pruebas
 ```
 
 `npm run seed` no hace falta cuando se conecte el SaaS real: son datos de
@@ -102,11 +109,45 @@ Si se publica en internet, conviene poner `CLAVE_PANEL`: sin ella el panel
 devuelve 401, y el enlace se abre una vez con `?clave=...` (deja una cookie de
 30 días, así Yeni no la teclea cada mañana). `/salud` queda siempre abierto.
 
-## El envío diario por WhatsApp
+## El envío diario
 
-`npm run enviar` genera el informe y lo manda. Con `WHATSAPP_PROVEEDOR=consola`
-—el valor por defecto— **no envía nada**: solo imprime el mensaje, que es la
-forma de probarlo antes de contratar nada.
+`npm run enviar` genera el informe y lo manda **por todos los canales
+configurados**. Cada canal falla por su cuenta: si el correo no sale, el
+WhatsApp sí, y al revés. La tarea termina con código distinto de cero si algún
+envío falló, para que se vea en los logs.
+
+Para ver cómo queda antes de enviar nada:
+
+```bash
+node src/cli.js whatsapp          # el mensaje de WhatsApp
+node src/cli.js email > correo.html   # el correo, para abrirlo en el navegador
+```
+
+### Correo
+
+Basta con un buzón normal de la empresa (Google Workspace con contraseña de
+aplicación, IONOS, Microsoft 365, el que sea). El cliente SMTP está escrito a
+mano, sin dependencias, y hace STARTTLS en el 587 o TLS directo en el 465.
+
+```bash
+EMAIL_HOST=smtp.tudominio.es
+EMAIL_PUERTO=587
+EMAIL_USUARIO=avisos@transportesaraya.es
+EMAIL_CLAVE=...
+EMAIL_DE=Transportes Araya <avisos@transportesaraya.es>
+EMAIL_DESTINATARIOS=yeni@transportesaraya.es
+URL_PANEL=https://vuestro-panel.es
+```
+
+El correo va en HTML y en texto plano, y lleva adjuntos
+`cobros-pendientes-AAAA-MM-DD.csv` y `pagos-pendientes-AAAA-MM-DD.csv`
+(`EMAIL_ADJUNTAR_CSV=no` para quitarlos). Si no pones `EMAIL_HOST`, el canal de
+correo sencillamente no se activa.
+
+## WhatsApp
+
+Con `WHATSAPP_PROVEEDOR=consola` —el valor por defecto— **no envía nada**: solo
+imprime el mensaje, que es la forma de probarlo antes de contratar nada.
 
 ### Opción A · WhatsApp Business Cloud API (Meta)
 
@@ -120,7 +161,7 @@ META_ID_NUMERO=...
 META_TOKEN=...
 META_PLANTILLA=pendientes_diario
 WHATSAPP_DESTINATARIOS=+34600000000
-URL_PUBLICA=https://panel.transportesaraya.es
+URL_PANEL=https://panel.transportesaraya.es
 ```
 
 Los parámetros de plantilla **no admiten saltos de línea**, así que la plantilla
@@ -152,7 +193,8 @@ WHATSAPP_DESTINATARIOS=+34600000000
 ### Programarlo cada mañana
 
 ```cron
-# Todos los días laborables a las 8:00 (hora del servidor)
+# Todos los días laborables a las 8:00 (hora del servidor).
+# Manda el correo y el WhatsApp en la misma pasada.
 0 8 * * 1-5 cd /ruta/a/transportes-araya && /usr/bin/node --no-warnings src/tareas/envio-diario.js >> /var/log/araya-envio.log 2>&1
 ```
 
@@ -168,11 +210,11 @@ src/
   db/                  Esquema SQLite, conexión y datos de ejemplo
   dominio/             Dinero en céntimos y fechas/vencimientos
   origen/              De dónde salen los datos (sqlite | rest)
-  informe/             Cálculo del informe diario y formato del mensaje
-  aviso/               Envío por WhatsApp (consola | meta | twilio)
-  web/                 Servidor y vistas del panel
+  informe/             Cálculo del informe y sus formatos (WhatsApp, correo, CSV)
+  aviso/               Canales de envío: correo (SMTP propio) y WhatsApp
+  web/                 Servidor y vistas del panel de respaldo
   tareas/              La tarea del envío diario
-test/                  46 pruebas con el runner de Node
+test/                  59 pruebas con el runner de Node
 ```
 
 ## Pendiente de decidir
@@ -181,6 +223,9 @@ test/                  46 pruebas con el runner de Node
   probado, pero hasta no tener la URL de la API (o el acceso a su base de
   datos) el panel funciona con la base local.
 - **Vía de WhatsApp.** No hay proveedor contratado todavía; el envío está
-  escrito para Meta y para Twilio, y de momento sale por consola.
+  escrito para Meta y para Twilio, y de momento sale por consola. El correo,
+  en cambio, funciona en cuanto se rellenen los datos del buzón.
+- **Datos del buzón de correo** (`EMAIL_HOST`, usuario y contraseña) y la
+  dirección de Yeni.
 - **Zona horaria.** Puesta en `Atlantic/Canary`. Si la empresa es peninsular,
   se cambia `ZONA_HORARIA` a `Europe/Madrid` en el `.env`.

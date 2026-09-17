@@ -5,6 +5,7 @@ import { creaAvisoMeta } from '../src/aviso/meta.js';
 import { creaAvisoTwilio } from '../src/aviso/twilio.js';
 import { creaAvisoConsola } from '../src/aviso/consola.js';
 import { creaAviso } from '../src/aviso/index.js';
+import { creaCanalWhatsapp } from '../src/aviso/whatsapp.js';
 import { envioDiario } from '../src/tareas/envio-diario.js';
 import { baseDePrueba, HOY } from './ayuda.js';
 import { generaInforme } from '../src/informe/diario.js';
@@ -72,7 +73,7 @@ test('con plantilla, los parámetros van sueltos y sin saltos de línea', async 
 
   await conConfig({
     meta: { idNumero: '111', token: 'tok', plantilla: 'pendientes_diario', idioma: 'es' },
-    web: { urlPublica: 'https://panel.ejemplo/araya' },
+    web: { urlPanel: 'https://panel.ejemplo/araya' },
   }, async () => {
     await creaAvisoMeta({ fetchImpl: impl }).envia(datos, 'da igual', ['+34600000001']);
   });
@@ -143,43 +144,77 @@ test('creaAviso rechaza un proveedor que no existe', () => {
   assert.throws(() => creaAviso('telegrama'), /Proveedor de aviso desconocido/);
 });
 
-test('el envío diario se planta si no hay destinatarios configurados', async () => {
+test('el envío diario avisa si un canal no tiene destinatarios, sin tumbar el resto', async () => {
   const { base } = informeDePrueba();
-  const avisoFalso = { nombre: 'meta', configurado: true, envia: async () => [] };
 
-  const destinatariosOriginales = config.aviso.destinatarios;
-  config.aviso.destinatarios = [];
-  try {
-    await assert.rejects(
-      () => envioDiario({ origen: base.origen, aviso: avisoFalso }),
-      /WHATSAPP_DESTINATARIOS/,
-    );
-  } finally {
-    config.aviso.destinatarios = destinatariosOriginales;
-  }
+  const canalRoto = {
+    nombre: 'whatsapp:meta',
+    destinatarios: [],
+    envia: async () => { throw new Error('No hay destinatarios: define WHATSAPP_DESTINATARIOS en el .env.'); },
+  };
+  const canalBueno = {
+    nombre: 'email',
+    destinatarios: ['yeni@ejemplo.es'],
+    envia: async () => [{ destinatario: 'yeni@ejemplo.es', enviado: true, id: null, motivo: null }],
+  };
+
+  const { porCanal, fallidos } = await envioDiario({ origen: base.origen, canales: [canalRoto, canalBueno] });
+
+  assert.equal(porCanal.length, 2);
+  assert.match(porCanal[0].error, /WHATSAPP_DESTINATARIOS/);
+  assert.equal(porCanal[1].error, null);
+  assert.equal(porCanal[1].resultados[0].enviado, true);
+  assert.equal(fallidos.length, 1);
+  assert.equal(fallidos[0].canal, 'whatsapp:meta');
 });
 
-test('el envío diario manda el mensaje y devuelve los fallos', async () => {
+test('el envío diario recoge los fallos de cada destinatario con su canal', async () => {
   const { base } = informeDePrueba();
-  const enviados = [];
-  const avisoFalso = {
+  const recibidos = [];
+
+  const canal = {
+    nombre: 'whatsapp:meta',
+    destinatarios: ['+34600000001', '+34600000002'],
+    async envia(informe) {
+      recibidos.push(informe);
+      return [
+        { destinatario: '+34600000001', enviado: true, id: 'wamid.1', motivo: null },
+        { destinatario: '+34600000002', enviado: false, id: null, motivo: 'número no válido' },
+      ];
+    },
+  };
+
+  const { informe, fallidos } = await envioDiario({ origen: base.origen, canales: [canal] });
+
+  assert.equal(recibidos[0].cobros.porTercero[0].nombre, 'Cliente Uno');
+  assert.equal(informe.cobros.numFacturas, 1);
+  assert.equal(fallidos.length, 1);
+  assert.equal(fallidos[0].destinatario, '+34600000002');
+  assert.equal(fallidos[0].canal, 'whatsapp:meta');
+});
+
+test('el canal de WhatsApp le pasa al proveedor el mensaje ya formateado', async () => {
+  const { base } = informeDePrueba();
+  const recibidos = [];
+  const proveedor = {
     nombre: 'meta',
     configurado: true,
     async envia(informe, mensaje, destinatarios) {
-      enviados.push(mensaje);
-      return destinatarios.map((d, i) => ({ destinatario: d, enviado: i === 0, motivo: i === 0 ? null : 'número no válido' }));
+      recibidos.push({ mensaje, destinatarios });
+      return destinatarios.map((d) => ({ destinatario: d, enviado: true, id: 'x', motivo: null }));
     },
   };
 
   const destinatariosOriginales = config.aviso.destinatarios;
-  config.aviso.destinatarios = ['+34600000001', '+34600000002'];
+  config.aviso.destinatarios = ['+34600000001'];
   try {
-    const { mensaje, fallidos } = await envioDiario({ origen: base.origen, aviso: avisoFalso });
-    assert.match(mensaje, /PENDIENTE DE COBRAR/);
-    assert.match(enviados[0], /Cliente Uno/);
-    assert.equal(fallidos.length, 1);
-    assert.equal(fallidos[0].destinatario, '+34600000002');
+    const canal = creaCanalWhatsapp({ proveedor });
+    await canal.envia(await generaInforme(base.origen, { hoy: HOY }));
   } finally {
     config.aviso.destinatarios = destinatariosOriginales;
   }
+
+  assert.match(recibidos[0].mensaje, /PENDIENTE DE COBRAR/);
+  assert.match(recibidos[0].mensaje, /Cliente Uno/);
+  assert.deepEqual(recibidos[0].destinatarios, ['+34600000001']);
 });

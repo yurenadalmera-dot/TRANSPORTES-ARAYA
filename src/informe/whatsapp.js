@@ -45,7 +45,7 @@ function seccion(titulo, bloque, etiquetaTercero, maxLineas) {
 // factura a factura se consulta en el panel, que va enlazado al final.
 export function formateaWhatsapp(informe, opciones = {}) {
   const maxLineas = opciones.maxLineas ?? config.informe.maxLineasWhatsapp;
-  const urlPanel = opciones.urlPanel ?? config.web.urlPublica;
+  const urlPanel = opciones.urlPanel ?? config.web.urlPanel;
 
   const lineas = [
     `*TRANSPORTES ARAYA* · ${formateaFecha(informe.fecha)}`,

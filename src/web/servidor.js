@@ -5,7 +5,7 @@ import { creaOrigen } from '../origen/index.js';
 import { generaInforme } from '../informe/diario.js';
 import { formateaWhatsapp } from '../informe/whatsapp.js';
 import { paginaPanel, paginaError } from './vistas.js';
-import { formateaFecha } from '../dominio/fechas.js';
+import { aCsv } from '../informe/csv.js';
 
 const COOKIE = 'araya_clave';
 
@@ -21,29 +21,6 @@ function leeCookie(cabecera, nombre) {
     if (clave === nombre) return decodeURIComponent(resto.join('='));
   }
   return null;
-}
-
-// Excel en español espera punto y coma como separador y coma decimal.
-function aCsv(filas, etiquetaTercero) {
-  const cabecera = [
-    'Nº factura', etiquetaTercero, 'Código', 'Fecha emisión', 'Vencimiento',
-    'Días vencida', 'Total', 'Pendiente', 'Concepto',
-  ];
-
-  const celda = (valor) => {
-    const texto = String(valor ?? '');
-    return /[";\n]/.test(texto) ? `"${texto.replaceAll('"', '""')}"` : texto;
-  };
-  const euros = (centimos) => (centimos / 100).toFixed(2).replace('.', ',');
-
-  const lineas = filas.map((f) => [
-    f.numero, f.terceroNombre, f.terceroCodigo,
-    formateaFecha(f.fechaEmision), formateaFecha(f.fechaVencimiento),
-    f.diasVencida, euros(f.totalCentimos), euros(f.pendienteCentimos), f.concepto,
-  ].map(celda).join(';'));
-
-  // El BOM evita que Excel destroce las tildes.
-  return `﻿${[cabecera.join(';'), ...lineas].join('\r\n')}\r\n`;
 }
 
 function responde(res, estado, tipo, cuerpo, cabeceras = {}) {

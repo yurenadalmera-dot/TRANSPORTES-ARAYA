@@ -45,8 +45,9 @@ export const config = {
     host: texto('HOST', '0.0.0.0'),
     // Si se define, el panel pide ?clave=... para abrirse desde el móvil.
     clave: texto('CLAVE_PANEL', ''),
-    // URL pública del panel, para enlazarla en el mensaje de WhatsApp.
-    urlPublica: texto('URL_PUBLICA', ''),
+    // Enlace al panel donde Yeni entra con su usuario. Se incluye en el
+    // mensaje de WhatsApp y en el correo para poder ver el detalle.
+    urlPanel: texto('URL_PANEL', ''),
   },
 
   aviso: {
@@ -65,6 +66,19 @@ export const config = {
       authToken: texto('TWILIO_AUTH_TOKEN', ''),
       remitente: texto('TWILIO_REMITENTE', ''),
     },
+  },
+
+  email: {
+    host: texto('EMAIL_HOST', ''),
+    puerto: numero('EMAIL_PUERTO', 587),
+    // true para el puerto 465 (TLS directo); false usa STARTTLS en el 587.
+    seguro: texto('EMAIL_SEGURO', 'no') === 'si',
+    usuario: texto('EMAIL_USUARIO', ''),
+    clave: texto('EMAIL_CLAVE', ''),
+    de: texto('EMAIL_DE', ''),
+    destinatarios: lista('EMAIL_DESTINATARIOS'),
+    adjuntarCsv: texto('EMAIL_ADJUNTAR_CSV', 'si') === 'si',
+    timeoutMs: numero('EMAIL_TIMEOUT_MS', 20000),
   },
 
   informe: {

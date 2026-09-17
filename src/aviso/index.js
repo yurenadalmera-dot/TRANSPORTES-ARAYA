@@ -1,17 +1,17 @@
 import { config } from '../config.js';
-import { creaAvisoConsola } from './consola.js';
-import { creaAvisoMeta } from './meta.js';
-import { creaAvisoTwilio } from './twilio.js';
+import { creaCanalWhatsapp } from './whatsapp.js';
+import { creaCanalEmail } from './email.js';
 
-export function creaAviso(proveedor = config.aviso.proveedor) {
-  switch (proveedor) {
-    case 'consola':
-      return creaAvisoConsola();
-    case 'meta':
-      return creaAvisoMeta();
-    case 'twilio':
-      return creaAvisoTwilio();
-    default:
-      throw new Error(`Proveedor de aviso desconocido: "${proveedor}". Usa "consola", "meta" o "twilio".`);
+export { creaAviso } from './proveedores.js';
+
+// Los canales por los que sale el informe del día. El correo solo se añade
+// si está configurado, así que el proyecto funciona igual sin él.
+export function creaCanales() {
+  const canales = [creaCanalWhatsapp()];
+
+  if (config.email.host && config.email.destinatarios.length > 0) {
+    canales.push(creaCanalEmail());
   }
+
+  return canales;
 }

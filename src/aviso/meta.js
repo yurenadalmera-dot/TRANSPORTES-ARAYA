@@ -16,7 +16,7 @@ function cuerpoPlantilla(informe) {
     formateaFecha(informe.fecha),
     formateaEuros(informe.cobros.totalCentimos),
     formateaEuros(informe.pagos.totalCentimos),
-    config.web.urlPublica || 'panel no configurado',
+    config.web.urlPanel || 'panel no configurado',
   ];
 
   return {
