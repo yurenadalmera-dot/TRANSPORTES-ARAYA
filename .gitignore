@@ -21,3 +21,11 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+### Python ###
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+### Enlace contable ###
+a3eco/salida/

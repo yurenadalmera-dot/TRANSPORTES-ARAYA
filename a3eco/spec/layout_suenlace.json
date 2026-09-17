@@ -1,0 +1,118 @@
+{
+  "nombre": "SUENLACE.DAT",
+  "descripcion": "Enlace contable de entrada de a3ASESOR|eco / a3ASESOR|con. Fichero ASCII secuencial de ancho fijo, sin separadores ni cabecera.",
+  "longitud_registro": 256,
+  "codificacion": "cp850",
+  "fin_de_linea": "\r\n",
+  "estados": {
+    "confirmado": "Posicion y longitud contrastadas con la documentacion publica de Wolters Kluwer.",
+    "probable": "Coherente con la documentacion, pero el offset exacto no esta contrastado. Verificar contra el PDF oficial antes de produccion.",
+    "pendiente": "Campo necesario cuyo offset NO esta determinado. Hay que rellenarlo con el PDF 'Enlace contable de entrada. Descripcion de registros' de la version de a3eco de la asesoria."
+  },
+  "tipos_de_registro": {
+    "0": "Asiento sin IVA/IGIC (apunte simple de cargo o abono).",
+    "1": "Cabecera de asiento con impuesto, formato factura (emitida o recibida).",
+    "2": "Cabecera de asiento con impuesto, formato factura rectificativa / abono.",
+    "3": "Observaciones asociadas al asiento anterior.",
+    "9": "Vencimientos asociados a la factura anterior."
+  },
+  "campos_comunes": [
+    {
+      "nombre": "tipo_formato",
+      "inicio": 1,
+      "longitud": 1,
+      "tipo": "constante",
+      "valor": "4",
+      "alineacion": "izquierda",
+      "relleno": " ",
+      "estado": "confirmado",
+      "notas": "Constante 4 para el formato actual del enlace de entrada."
+    },
+    {
+      "nombre": "codigo_empresa",
+      "inicio": 2,
+      "longitud": 5,
+      "tipo": "numerico",
+      "alineacion": "derecha",
+      "relleno": "0",
+      "estado": "confirmado",
+      "notas": "Codigo de la empresa en a3eco. Transportes Araya Franquiz SL = 02111."
+    },
+    {
+      "nombre": "fecha_asiento",
+      "inicio": 7,
+      "longitud": 8,
+      "tipo": "fecha",
+      "formato": "AAAAMMDD",
+      "alineacion": "izquierda",
+      "relleno": " ",
+      "estado": "confirmado"
+    },
+    {
+      "nombre": "tipo_registro",
+      "inicio": 15,
+      "longitud": 1,
+      "tipo": "numerico",
+      "alineacion": "derecha",
+      "relleno": "0",
+      "estado": "confirmado"
+    },
+    {
+      "nombre": "cuenta",
+      "inicio": 16,
+      "longitud": 12,
+      "tipo": "cuenta",
+      "alineacion": "izquierda",
+      "relleno": " ",
+      "estado": "confirmado",
+      "notas": "Subcuenta de nivel 6 a 12. Las subcuentas de Araya son de 8 digitos (43000123, 70500000). Si la cuenta no existe en a3eco se crea automaticamente: por eso el mapeo de clientes tiene que ser exacto, o se ensucia el plan contable de la asesoria."
+    },
+    {
+      "nombre": "descripcion",
+      "inicio": 28,
+      "longitud": 30,
+      "tipo": "texto",
+      "alineacion": "izquierda",
+      "relleno": " ",
+      "estado": "confirmado",
+      "notas": "Descripcion del apunte / de la cuenta. 30 caracteres, se trunca."
+    },
+    {
+      "nombre": "signo_importe",
+      "inicio": 58,
+      "longitud": 1,
+      "tipo": "constante_variable",
+      "valores": {"C": "Cargo (debe)", "A": "Abono (haber)"},
+      "alineacion": "izquierda",
+      "relleno": " ",
+      "estado": "confirmado"
+    },
+    {
+      "nombre": "importe",
+      "inicio": 59,
+      "longitud": 14,
+      "tipo": "importe",
+      "formato": "signo + 10 enteros + punto decimal + 2 decimales",
+      "alineacion": "derecha",
+      "relleno": " ",
+      "estado": "probable",
+      "notas": "El formato (signo, 10 enteros, punto, 2 decimales = 14 posiciones) esta documentado; el offset 59 se deduce de que el campo anterior acaba en 58. CONFIRMAR."
+    }
+  ],
+  "campos_pendientes": [
+    {
+      "nombre": "contrapartida",
+      "estado": "pendiente",
+      "notas": "Subcuenta de contrapartida en registros tipo 1/2. Para Araya: 70500000 (prestacion de servicios) y 70500001 (abono prestacion de servicios)."
+    },
+    {"nombre": "nif_cliente", "estado": "pendiente"},
+    {"nombre": "serie_documento", "estado": "pendiente"},
+    {"nombre": "numero_documento", "estado": "pendiente"},
+    {"nombre": "fecha_documento", "estado": "pendiente"},
+    {"nombre": "base_imponible_1", "estado": "pendiente", "notas": "signo + 10 enteros + 2 decimales, igual que importe."},
+    {"nombre": "tipo_impuesto_1", "estado": "pendiente", "notas": "IGIC, no IVA: Araya opera en Fuerteventura. Tipo general 7%."},
+    {"nombre": "cuota_impuesto_1", "estado": "pendiente"},
+    {"nombre": "regimen_impuesto", "estado": "pendiente", "notas": "Interior / intracomunitario / exportacion / inversion del sujeto pasivo."},
+    {"nombre": "bases_y_cuotas_2_a_n", "estado": "pendiente", "notas": "El registro admite varios desgloses por tipo impositivo."}
+  ]
+}

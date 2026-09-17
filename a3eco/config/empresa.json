@@ -1,0 +1,28 @@
+{
+  "_origen": "Datos facilitados por Departamento Fiscal - Asesoria Gopar (17/09/2026).",
+  "codigo_empresa": "02111",
+  "razon_social": "TRANSPORTES ARAYA FRANQUIZ SL",
+  "cuentas": {
+    "ventas": {
+      "subcuenta": "70500000",
+      "descripcion": "Prestacion de Servicios",
+      "estado": "confirmado"
+    },
+    "abono_ventas": {
+      "subcuenta": "70500001",
+      "descripcion": "Abono prestacion de servicios",
+      "estado": "confirmado"
+    },
+    "igic_repercutido": {
+      "subcuenta": "47700000",
+      "descripcion": "IGIC repercutido",
+      "estado": "pendiente",
+      "notas": "NO confirmado por la asesoria. 477 es la cuenta del PGC para impuesto repercutido, pero hay que pedir la subcuenta exacta antes de generar el fichero de pruebas."
+    }
+  },
+  "impuesto": {
+    "nombre": "IGIC",
+    "tipo_general": 7.0,
+    "notas": "Araya opera en Fuerteventura: IGIC, no IVA."
+  }
+}
