@@ -1,0 +1,17 @@
+{
+  "name": "transportes-araya",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Panel diario de cobros pendientes de clientes y pagos pendientes a proveedores de Transportes Araya",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node --no-warnings src/web/servidor.js",
+    "seed": "node --no-warnings src/cli.js seed",
+    "informe": "node --no-warnings src/cli.js informe",
+    "enviar": "node --no-warnings src/tareas/envio-diario.js",
+    "test": "node --no-warnings --test \"test/*.test.js\""
+  }
+}
