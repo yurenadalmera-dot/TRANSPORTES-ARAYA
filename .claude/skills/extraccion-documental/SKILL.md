@@ -36,16 +36,21 @@ Nueve pasos. El orden importa: los pasos 2 y 3 van antes de gastar dinero, y el 
 tocar producción.
 
 ```
-1. Recibir archivo          → validar tipo y tamaño
+0. ¿Hace falta el modelo?   → QR de Verifactu, XML, PDF con capa de texto: parsea y sáltatelo
+1. Recibir archivo          → validar tipo y tamaño; hash para no pagar un duplicado
 2. Verificar sesión         → con el token del usuario, nunca service role
 3. Comprobar cupo           → ANTES de llamar al modelo; después ya se ha pagado
 4. Guardar el original      → a storage, siempre, aunque la lectura falle
 5. Cargar contexto          → catálogo de terceros/servicios, en shortlist
 6. Llamar al modelo         → schema estricto + prefijo cacheado
-7. Validar en código        → cuadres aritméticos, regla del cero, confianza derivada
+7. Validar en código        → regla del cero, LUEGO cuadres, LUEGO avisos
 8. Escribir en _ocr         → tabla intermedia, nunca producción
 9. Revisión humana → RPC    → alta transaccional al confirmar
 ```
+
+El paso 0 se olvida siempre y es el más barato de todos: un documento que ya trae el dato en
+forma legible por máquina no necesita modelo, y leerlo cuesta cero tokens con precisión
+perfecta.
 
 Los pasos 1-8 pueden correr en n8n, en un endpoint o mezclados. El **2, el 3 y el 9 viven en
 la base de datos** como funciones llamadas con el token de quien pide — ahí es donde el RLS
@@ -65,17 +70,32 @@ Parece contradictorio y no lo es. Si un campo es obligatorio y *no* admite `null
 pierde la opción de decir "no lo encuentro" y tiene que escribir algo: `"N/A"`, un `0`, o un
 NIF inventado. Con `null` permitido, el hueco es una respuesta válida. Ver `references/esquema.md`.
 
-**3. Un `0` en un importe que puede faltar se convierte en `null`.**
-Esta es la regla que más dinero salva y la que todo el mundo omite. Un hueco genera una
-pregunta; un cero se contabiliza en silencio y descuadra un cálculo sin que nadie lo note.
-Va en código después de la respuesta, nunca confiada al prompt. Ver `references/validacion.md`.
+**3. Un `0` en un importe que puede faltar se convierte en `null` — y esa regla va ANTES de los
+cuadres.**
+La regla que más dinero salva y la que todo el mundo omite. Un hueco genera una pregunta; un
+cero se contabiliza en silencio y descuadra un cálculo sin que nadie lo note. Va en código
+después de la respuesta, nunca confiada al prompt.
+
+El orden no es estético, es causal: `hay(0)` es `true`, así que un cero colocado después de un
+cuadre entra en él como dato bueno e impide la deducción que lo habría recuperado. Ya ha
+llegado así a producción. Protégelo con una prueba de simetría —`0` y `null` deben dar el mismo
+resultado— y para poder escribirla, saca el post-proceso a una función pura exportada. Ver
+`references/validacion.md` §0.
+
+Y no es una regla de IA: es una regla de **fronteras**. Vale igual para una API de terceros,
+un CSV o un webhook. `Number(campo ?? 0)` es el mismo fallo sin modelo de por medio.
 
 **4. La confianza la calcula el código, no el modelo.**
-Los modelos no son estimadores calibrados de probabilidad: la diferencia entre un 0.74 y un
-0.78 autoinformados es ruido. Pide al modelo una señal gruesa (`alta`/`media`/`baja`) y
-**deriva la puntuación real de comprobaciones deterministas**: ¿cuadra la suma con el total?
-¿valida el dígito de control del NIF? ¿hizo match el tercero? Eso sí es un número defendible,
-y además te dice *por qué* bajó.
+Los modelos no son estimadores calibrados: un `0,82` autoinformado sugiere una precisión que no
+existe, y habrá alucinaciones marcadas como `alta`. Aun así se le pide una señal **gruesa**
+(`alta`/`media`/`baja`), porque ve cosas que el código no puede derivar: que el papel está
+borroso, torcido, que hay dos totales impresos, que la firma está tachada.
+
+Lo que no se hace es dejarle decidir. Esa señal es **una entrada más** de una puntuación que
+calcula el código con comprobaciones deterministas —¿cuadra la suma? ¿valida el dígito de
+control? ¿hizo match el tercero?— y que se guarda **con sus motivos**. Y solo puede empeorar:
+si se asigna directa en varios sitios gana la última, y un documento con un problema detectado
+acaba subiendo en una bandeja ordenada por fiabilidad.
 
 **5. El cupo se comprueba antes de la llamada y se apunta desde el servidor.**
 Después de llamar ya has pagado. Y si el consumo lo apunta el navegador, se salta. Ver
@@ -107,8 +127,10 @@ fallo aparece cerca de su causa.
    pieza que hay que reescribir de cero para cada sector; el resto se copia.
 4. **Monta la llamada** (`assets/llamada-anthropic.js` o `assets/llamada-openai.js`), con
    caché del prefijo estable desde el primer día — retrofitarla después es rehacer el prompt.
-5. **Escribe las validaciones deterministas** (`references/validacion.md`). Mínimo: regla del
-   cero y un cuadre aritmético propio del documento.
+5. **Escribe las validaciones deterministas** (`references/validacion.md`) **como función pura
+   exportada**, no dentro de la función que llama a la API. Mínimo: regla del cero, un cuadre
+   propio del documento, y una prueba de simetría entre `0` y `null` que falle si alguien
+   reordena los bloques.
 6. **Monta la bandeja** con marcado azul/ámbar (`references/revision.md`).
 7. **Cierra la seguridad y el cupo** (`references/datos.md`) y comprueba con un token caducado
    y otro de otra organización que devuelven lo que deben.
@@ -121,8 +143,10 @@ Recorre `assets/auditoria.md`: es la misma lista en forma de comprobaciones, ord
 coste y riesgo. Los cuatro fallos que aparecen casi siempre:
 
 - Se escribe directo en producción sin tabla intermedia.
-- Hay importes donde un `0` del modelo pasa por dato bueno.
+- Hay importes donde un `0` del modelo pasa por dato bueno — o la regla del cero existe pero
+  corre después de los cuadres, que la deja sin efecto.
 - El prefijo del prompt (instrucciones + catálogo) se reenvía sin caché en cada documento.
+- Se llama al modelo para documentos que ya traen el dato estructurado (QR, XML, capa de texto).
 - El paso que escribe corre con service role en vez del token del usuario.
 
 Informa de las desviaciones ordenadas por lo que cuestan — en euros al mes o en riesgo de dato

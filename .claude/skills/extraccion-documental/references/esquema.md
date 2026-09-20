@@ -53,6 +53,21 @@ en cada objeto, y profundidad y número de propiedades acotados. Sin `strict: tr
 es una sugerencia, no una garantía — compruébalo, porque es un fallo silencioso: parece que
 funciona hasta el documento raro.
 
+**Protege el techo con una prueba.** El límite se alcanza en silencio: el esquema funciona hasta
+que alguien añade un campo anulable perfectamente razonable y la extracción entera empieza a
+devolver 400, con un error que no menciona el campo nuevo. Una prueba lo convierte en un fallo
+local y explicado:
+
+```js
+test('el esquema no pasa de 16 tipos unión (la API responde 400 en 17)', () => {
+  const union = Object.values(ESQUEMA.properties)
+    .filter((v) => Array.isArray(v.type) && v.type.includes('null'));
+  assert.ok(union.length <= 16,
+    `Hay ${union.length} propiedades con tipo unión. Para añadir un campo anulable hay que `
+    + 'quitarle el null a uno descriptivo, nunca a un identificador ni a un importe.');
+});
+```
+
 En los dos casos: **pide el esquema estricto de verdad**. "Devuélveme JSON" en el prompt más un
 `JSON.parse` no es salida estructurada, es una esperanza. Aun así, envuelve el parseo en
 `try/catch`: el coste de hacerlo es cero y el día que falle no tumbará el flujo.

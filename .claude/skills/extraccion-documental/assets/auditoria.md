@@ -19,9 +19,28 @@ una persona pueda parar un error.
 
 **A2 · ¿Hay importes donde un `0` del modelo pasa por dato bueno?**
 Lista los campos numéricos del esquema y pregúntate uno a uno: si el modelo devuelve `0` aquí,
-¿se nota? Los que no se noten necesitan la regla del cero. Mira especialmente cotizaciones,
-retenciones, descuentos y cuotas.
+¿se nota? El fallo típico no es olvidar la regla, es ponerla **en un solo campo** y darla por
+resuelta. Mira especialmente cotizaciones, cuotas de impuesto, kilómetros y unidades — y
+comprueba que las excepciones (retenciones, descuentos) están decididas, no olvidadas.
 → `references/validacion.md` §1
+
+**A2b · ¿En qué ORDEN corren las validaciones?**
+La regla del cero tiene que ir **antes** de los cuadres. Si va después no sirve de nada: `hay(0)`
+es `true`, así que el cero entra en el cuadre como dato bueno y bloquea la deducción que lo
+habría recuperado. Este fallo ya ha llegado a producción y no da ningún error — solo pierde
+datos que estaban al alcance. Compruébalo ejecutando el post-proceso con `0` y con `null` en el
+mismo campo: si dan resultados distintos, el orden está mal.
+→ `references/validacion.md` §0
+
+**A2c · ¿Puede la confianza SUBIR?**
+Si se asigna directa en varios sitios, gana la última. Un documento con un descuadre ya
+detectado puede acabar con mejor nota por una regla posterior y subir en una bandeja ordenada
+por fiabilidad.
+→ `references/validacion.md` §4
+
+**A2d · ¿Se puede probar el post-proceso sin llamar a la API?**
+Si está enterrado dentro de la función que llama al modelo, no hay forma de escribir la prueba
+que detecta A2b. Sacarlo a una función pura exportada es parte del arreglo.
 
 **A3 · ¿Los campos que pueden faltar admiten `null`?**
 Un campo en `required` sin `null` obliga al modelo a inventarse algo. Revisa identificadores
@@ -65,6 +84,13 @@ Si los tres acaban en el mismo mensaje, se manda a la gente a buscar donde no es
 
 ## C. Coste (ordenado por lo que suele ahorrar)
 
+**C0 · ¿Se llama al modelo para documentos que no lo necesitan?**
+El ahorro más grande y el que nadie mira. Si el documento trae QR de Verifactu, XML de Facturae
+o es un PDF con capa de texto, el dato ya está ahí: leerlo cuesta cero tokens y es exacto.
+Comprueba también si hay duplicados que se pagan dos veces y qué hay realmente en el recuento de
+documentos del mes.
+→ `references/coste.md` §1
+
 **C1 · ¿Se cachea el prefijo estable?**
 Mira `cache_read_input_tokens` (Anthropic) o `prompt_tokens_details.cached_tokens` (OpenAI) en
 respuestas reales. Si es 0 de forma constante, no está entrando. Busca fechas interpoladas en el
@@ -75,16 +101,39 @@ system prompt o catálogos sin `ORDER BY`.
 El gasto evitable más grande cuando hay catálogo, y crece con cada alta. Pasa a shortlist.
 → `references/coste.md` §2
 
-**C3 · ¿El tier del modelo está justificado con datos?**
-Extraer es transcripción. Si corre en el tier más caro sin haber medido el barato sobre
-documentos reales, probablemente sobra gasto. Necesitas `_ocr` para medirlo bien (A1).
+**C2b · ¿Entra el caché de verdad, y es compatible con el tier al que quieres ir?**
+Dos trampas: el caché **caduca**, así que a bajo volumen disperso no ahorra nada salvo que
+agrupes en tandas; y el mínimo cacheable **depende del modelo y no crece de forma ordenada**, así
+que recortar el catálogo y bajar de tier a la vez puede dejar el prefijo por debajo del umbral y
+salir más caro. No son palancas independientes.
 → `references/coste.md` §3
+
+**C3 · ¿El tier del modelo está justificado con datos, y en el orden correcto?**
+Extraer es transcripción. Si corre en el tier más caro sin haber medido el barato sobre
+documentos reales, probablemente sobra gasto. Pero mide **después** de simplificar la tarea: un
+modelo barato al que todavía le mandas el catálogo entero fallará, y habrás "demostrado" que no
+sirve cuando el problema era otro. Necesitas `_ocr` para medirlo (A1).
+→ `references/coste.md` §6
+
+**C3b · ¿Se envía `effort` a un modelo que no lo acepta?**
+Algunos devuelven 400 antes de leer el documento. Si el modelo se cambia por variable de entorno
+para comparar tiers, esto convierte la prueba del modelo barato en una extracción rota.
+
+**C3c · ¿Sobra algo en el esquema de salida?**
+Los tokens de salida cuestan del orden de 5× los de entrada. Un campo que no acaba en columna se
+paga en cada documento.
+→ `references/coste.md` §5
 
 **C4 · ¿El flujo asíncrono podría ir por API de lotes?**
 Si nadie espera delante de la pantalla, es la mitad de precio.
 → `references/coste.md` §5
 
 **C5 · ¿Está el esfuerzo/razonamiento al mínimo útil?**
+
+**C6 · ¿Los reintentos vuelven a pagar la extracción?**
+Si la llamada no está aislada con persistencia inmediata del resultado, cada reintento del
+orquestador re-factura el documento.
+→ `references/coste.md` §7
 
 ---
 

@@ -8,7 +8,17 @@ const Anthropic = require('@anthropic-ai/sdk');
 // Tier: extraer es transcripción, no razonamiento. Empieza por el más
 // barato que aguante TUS documentos y mídelo contra datos_revisados
 // antes de subir. Ver references/coste.md.
-const MODELO = process.env.MODELO_EXTRACCION || 'claude-haiku-4-5';
+const MODELO = process.env.MODELO_EXTRACCION || 'claude-sonnet-5';
+
+// `effort` no existe en toda la familia: Haiku 4.5 y Sonnet 4.5 devuelven
+// 400 si se les envía, ANTES de leer el documento. Como el modelo se
+// cambia por variable de entorno para medir tiers, mandarlo a ciegas
+// convierte "probar el modelo barato" en "romper la extracción" y hace
+// parecer que el modelo barato no sirve.
+const ACEPTA_EFFORT = new Set([
+  'claude-opus-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-opus-4-6',
+  'claude-sonnet-5', 'claude-sonnet-4-6', 'claude-fable-5', 'claude-fable-5-1',
+]);
 const PROMPT_VERSION = '2026-09-20';      // se guarda en cada fila _ocr
 
 const IMAGENES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -73,8 +83,9 @@ async function extraer({ bytes, mime, catalogo = [] }) {
       cache_control: { type: 'ephemeral' },
     }],
     output_config: {
-      effort: 'low',                                    // transcribir, no razonar
       format: { type: 'json_schema', schema: ESQUEMA }, // garantía, no petición
+      // Transcribir no necesita profundidad. Solo donde se acepta.
+      ...(ACEPTA_EFFORT.has(MODELO) ? { effort: 'low' } : {}),
     },
     messages: [{
       role: 'user',
