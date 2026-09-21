@@ -1,3 +1,14 @@
+-- ############################################################################
+-- APLICADO EN PRODUCCION EL 21/09/2026.
+--   Se borraron las 32 filas fantasma. Comprobado despues: 0 parejas
+--   duplicadas, los 3 falsos positivos intactos, 0 lineas huerfanas y
+--   0 cobros huerfanos. Facturas de venta: 11.539 -> 11.507.
+--   Copia de seguridad de las 32 filas con sus lineas en la tabla
+--   public.respaldo_duplicados_factusol_20260921 (sin permisos para la API).
+--   Este fichero queda como registro y para volver a pasarlo si en el futuro
+--   otra importacion historica vuelve a duplicar facturas.
+-- ############################################################################
+
 -- ============================================================================
 -- Limpiar las facturas de venta duplicadas por las series de Factusol
 -- Transportes Araya Franquiz - 21/09/2026
