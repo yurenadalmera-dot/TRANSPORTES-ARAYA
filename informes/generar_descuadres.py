@@ -48,7 +48,7 @@ ws['A1'] = 'Transportes Araya Franquiz'
 ws['A1'].font = Font(name=FUENTE, size=15, bold=True, color=AZUL)
 ws['A2'] = 'Facturas donde el importe cobrado de la ficha no cuadra con la suma de sus cobros'
 ws['A2'].font = Font(name=FUENTE, size=11, color='FF595959')
-ws['A3'] = 'Listado a ' + date(2026,9,21).strftime('%d/%m/%Y') + '  ·  %d facturas de %d clientes' % (len(d), len({x['cliente'] for x in d}))
+ws['A3'] = 'Listado a ' + date(2026,9,22).strftime('%d/%m/%Y') + '  ·  %d facturas de %d clientes' % (len(d), len({x['cliente'] for x in d}))
 ws['A3'].font = Font(name=FUENTE, size=10, color='FF808080')
 
 ws['A5'] = ('Para que sirve: en cada una de estas facturas hay dos cifras de lo cobrado que no coinciden. '
@@ -252,7 +252,7 @@ texto = [
  ('', 'Esto no hace que nadie aparezca debiendo de mas. El informe de pendientes de cobro se queda siempre con la mayor de las dos cifras, asi que la deuda que ves es la buena. El descuadre solo enganya a lo que lea la casilla directamente, como le paso al expediente de HUBARA el 21/09/2026.'),
  ('', ''),
  ('De donde sale', ''),
- ('', 'De la base del panel, el 21/09/2026: facturas_venta.importe_cobrado frente a la suma de la tabla cobros. Se sacaron las que se diferencian en mas de un centimo y tienen al menos un cobro anotado.'),
+ ('', 'De la base del panel, el 22/09/2026: facturas_venta.importe_cobrado frente a la suma de la tabla cobros. Se sacaron las que se diferencian en mas de un centimo y tienen al menos un cobro anotado.'),
 ]
 rr = 3
 for tit, cuerpo in texto:
@@ -270,5 +270,5 @@ g.column_dimensions['B'].width = 105
 g.sheet_view.showGridLines = False
 
 wb.calculation.fullCalcOnLoad = True
-wb.save('/home/user/TRANSPORTES-ARAYA/informes/descuadres_cobrado_20260921.xlsx')
+wb.save('/home/user/TRANSPORTES-ARAYA/informes/descuadres_cobrado_20260922.xlsx')
 print('guardado; filas de datos:', len(d), 'clientes:', len(primeras), 'fila total:', fila_total)
