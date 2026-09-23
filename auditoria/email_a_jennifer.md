@@ -49,7 +49,7 @@ Las dos fases pueden contratarse por separado.
 
 **Cuenta bancaria para la transferencia:**
 
-> Titular: INNOVA IA SYSTEMS
+> Titular: Yurena Méndez (Innova IA Systems) · NIF 78527655C
 > IBAN: ES53 0182 5342 7802 0318 5904
 > Concepto: Transportes Araya · Fase 2 (o Fase 3), según corresponda
 
