@@ -50,7 +50,7 @@ Las dos fases pueden contratarse por separado.
 **Cuenta bancaria para la transferencia:**
 
 > Titular: INNOVA IA SYSTEMS
-> IBAN: `[PENDIENTE DE RELLENAR]`
+> IBAN: ES53 0182 5342 7802 0318 5904
 > Concepto: Transportes Araya · Fase 2 (o Fase 3), según corresponda
 
 La cuota mensual del servicio, recordarte, **se sustituye, no se suma**: hoy son 256,80 €; con
