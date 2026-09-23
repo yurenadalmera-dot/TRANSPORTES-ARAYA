@@ -85,13 +85,13 @@ están contadas de la base de datos del panel el __HOY__.</div>
 
 <h3>Cuota mensual del servicio</h3>
 <table>
-<tr><th>Etapa</th><th class="r">Base mensual</th><th class="r">IGIC 7%</th><th class="r">Total mensual</th></tr>
-<tr><td>Fase 1 (la vigente hoy)</td><td class="r">240,00 €</td><td class="r">16,80 €</td><td class="r">256,80 €</td></tr>
-<tr><td>Con fase 2 activada</td><td class="r">320,00 €</td><td class="r">22,40 €</td><td class="r">342,40 €</td></tr>
-<tr><td>Con fases 2 y 3 activadas</td><td class="r">420,00 €</td><td class="r">29,40 €</td><td class="r">449,40 €</td></tr>
+<tr><th>Concepto</th><th class="r">Base mensual</th><th class="r">IGIC 7%</th><th class="r">Total mensual</th></tr>
+<tr><td>Servicio mensual del sistema completo</td><td class="r">240,00 €</td><td class="r">16,80 €</td><td class="r">256,80 €</td></tr>
 </table>
-<div class="ley">Las cuotas <b>se sustituyen, no se suman</b>. La nueva empieza a contar cuando la
-fase está en funcionamiento; hasta entonces sigue la anterior.</div>
+<div class="ley">La cuota <b>se mantiene en 240,00 € + IGIC</b> y <b>no sube</b> al contratar las
+fases 2 y 3: cubre alojamiento, copias de seguridad, mantenimiento, corrección de errores y el
+soporte funcional del sistema completo, con todo lo que ya está entregado y con lo que se
+entregue en adelante.</div>
 
 <div class="ley">Cómo leer el estado de cada línea en las tablas que siguen:<br>
 <span class="est ok">ENTREGADO</span> funcionando en producción &nbsp;·&nbsp;
@@ -214,7 +214,19 @@ ha hecho entera desde 2003, y el documento de transporte está montado con firma
 <b>13 de septiembre de 2026</b>. Si no se envió burofax antes de esa fecha, previsiblemente ya
 no es reclamable.</div>
 
-<h2>8. Resumen</h2>
+<h2 class="nueva">8. Situación de pagos</h2>
+<table>
+<tr><th>Concepto</th><th class="r">Importe con IGIC</th><th>Situación</th></tr>
+<tr><td><b>Fase 1</b> · INNOVA-2026-001, ya aceptada</td><td class="r">1.605,00 €</td><td><b>Pendiente de cobro</b></td></tr>
+<tr><td><b>Cuota mensual del servicio</b> · desde el arranque del panel</td><td class="r">256,80 € / mes</td><td><b>Pendiente de cobro</b></td></tr>
+<tr><td><b>Fase 2</b> · Integración y operativa</td><td class="r">2.354,00 €</td><td>Sin contratar</td></tr>
+<tr><td><b>Fase 3</b> · Ventas y control económico</td><td class="r">3.852,00 €</td><td>Sin contratar</td></tr>
+</table>
+<div class="caja oro">A día de hoy <b>no se ha cobrado todavía ni la fase 1 ni ninguna cuota
+mensual</b>, pese a que el sistema lleva funcionando en producción con datos reales desde
+agosto. Los meses de cuota devengados van detallados en su factura correspondiente.</div>
+
+<h2>9. Resumen</h2>
 <table>
 <tr><th>Fase</th><th class="r">Importe</th><th>Situación</th></tr>
 <tr><td><b>Fase 1</b> · Arranque y compras</td><td class="r">1.500,00 €</td><td>Entregada, y casi todas sus líneas hacen hoy más de lo presupuestado.</td></tr>

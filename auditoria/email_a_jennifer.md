@@ -53,9 +53,13 @@ Las dos fases pueden contratarse por separado.
 > IBAN: ES53 0182 5342 7802 0318 5904
 > Concepto: Transportes Araya · Fase 2 (o Fase 3), según corresponda
 
-La cuota mensual del servicio, recordarte, **se sustituye, no se suma**: hoy son 256,80 €; con
-la fase 2 en marcha pasa a 342,40 €, y con las dos a 449,40 €. La nueva cuota empieza a contar
-cuando la fase está funcionando, no al aceptarla.
+La cuota mensual del servicio **se mantiene en 240,00 € + IGIC (256,80 €) y no sube** al
+contratar las fases 2 y 3: cubre el sistema completo, con todo lo que ya está entregado y con
+lo que se entregue en adelante.
+
+Te recuerdo también que **siguen pendientes de cobro la fase 1 (1.605,00 € con IGIC) y las
+cuotas mensuales devengadas** desde que el panel está en marcha. Te paso la factura por
+separado.
 
 Cualquier cosa que quieras que te aclare del documento, me dices y lo vemos.
 
