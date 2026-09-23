@@ -67,7 +67,7 @@
     }
    }
 
-   /* el boton de conciliar: primero el papel, luego el reparto */
+   /* el boton de conciliar: primero el reparto, luego el papel */
    if(q('[data-rpok]')){
     var b=q('[data-rpok]');
     b.onclick=function(){
@@ -95,7 +95,7 @@
       .catch(function(e){S.bz=false;toast((e&&e.message)||'No se pudo conciliar');render();});};
    }
 
-   /* ya conciliado: enseñar el justificante o pedirlo */
+   /* ya conciliado: ensenar el justificante o pedirlo */
    if(mo.estado==='conciliado'&&q('[data-cn]')&&!q('[data-jbpie]')){
     var pie2=q('[data-cn]').parentNode;
     if(pie2){
@@ -150,7 +150,7 @@
     td.insertBefore(nb,b);
    });
 
-   /* filtro: enseñar solo los conciliados sin justificante */
+   /* filtro: ensenar solo los conciliados sin justificante */
    var fbs=document.querySelectorAll('[data-bkf]');
    if(fbs.length&&!q('[data-jbfil]')){
     var cont=fbs[0].parentNode;
