@@ -10,6 +10,8 @@
 -- igual que los comprobantes de cobro. Aqui solo se guarda la ruta.
 -- ============================================================================
 
+-- Ejecutar por tandas: el ALTER primero, y la vista despues.
+
 -- 1. Donde se guarda -----------------------------------------------------------
 alter table public.movimientos_banco
   add column if not exists justificante_url    text,
@@ -29,9 +31,11 @@ create or replace view public.v_movimientos as
     m.factura_id, m.factura_venta_id,
     coalesce(p.nombre, c.nombre) as tercero,
     coalesce(f.numero_factura, fv.numero_factura) as documento,
-    m.justificante_url, m.justificante_nombre, m.justificante_at, m.justificante_por,
     a.clase, a.aviso, a.diagnostico, a.sugerencias, a.mejor_confianza,
-    a.sug_tercero, a.sug_numero, a.ya_registrado, a.factura_ya_registrada
+    a.sug_tercero, a.sug_numero, a.ya_registrado, a.factura_ya_registrada,
+    -- Las nuevas van AL FINAL: create or replace view no deja meterlas en medio
+    -- (ERROR 42P16: cannot change name of view column "clase" to "justificante_url")
+    m.justificante_url, m.justificante_nombre, m.justificante_at, m.justificante_por
    from public.movimientos_banco m
      left join public.cuentas_banco cb on cb.id = m.cuenta_id
      left join public.facturas f on f.id = m.factura_id
