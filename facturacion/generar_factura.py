@@ -39,12 +39,60 @@ FACTURAS = {
               'Informes de ventas y cobros', 'Exportación mensual a la asesoría'],
              1800.00),
         ]),
+    'fases23': dict(
+        numero='2026-002', salida='factura_2026-002_araya_completa',
+        fecha='24/09/2026', vence='24/10/2026',
+        nota='Importe &iacute;ntegro de ambas fases seg&uacute;n presupuesto ARAYA-F23-20260916. La cuota mensual del '
+             'servicio se mantiene en 240,00 &euro; + IGIC y no var&iacute;a por la contrataci&oacute;n de estas fases.',
+        lineas=[
+            ('Ampliación del sistema — Fase 2 · Integración y operativa',
+             'Presupuesto ARAYA-F23-20260916 (16/09/2026). Alcance:',
+             ['Integración con FactuSol', 'Lectura automática de facturas',
+              'WhatsApp y avisos de reposición', 'Control de cubetas',
+              'Planificación de rutas', 'Puesta en marcha y formación'],
+             2200.00),
+            ('Ampliación del sistema — Fase 3 · Ventas y control económico',
+             'Presupuesto ARAYA-F23-20260916 (16/09/2026). Alcance:',
+             ['Clientes y presupuestos', 'Albaranes con QR y envío',
+              'Facturación de ventas', 'Cobros y conciliación asistida',
+              'Informes de ventas y cobros', 'Exportación mensual a la asesoría'],
+             3600.00),
+        ]),
+    'completa': dict(
+        numero='2026-001', salida='factura_2026-001_araya_completa',
+        fecha='24/09/2026', vence='24/10/2026',
+        nota='Factura &uacute;nica por la implantaci&oacute;n completa del sistema: fase 1 seg&uacute;n presupuesto '
+             'INNOVA-2026-001 y fases 2 y 3 seg&uacute;n presupuesto ARAYA-F23-20260916. La cuota mensual del servicio '
+             'se mantiene en 240,00 &euro; + IGIC y se factura aparte cada mes.',
+        lineas=[
+            ('Implantación del sistema — Fase 1',
+             'Presupuesto INNOVA-2026-001 (aceptado 20/08/2026). Entregado y verificado en producción el 31/08/2026:',
+             ['Panel operativo privado', 'Control de stock', 'Pedidos a proveedores',
+              'Gestión de facturas', 'Control de deuda', 'Alertas operativas'],
+             1500.00),
+            ('Ampliación del sistema — Fase 2 · Integración y operativa',
+             'Presupuesto ARAYA-F23-20260916 (16/09/2026). Alcance:',
+             ['Integración con FactuSol', 'Lectura automática de facturas',
+              'WhatsApp y avisos de reposición', 'Control de cubetas',
+              'Planificación de rutas', 'Puesta en marcha y formación'],
+             2200.00),
+            ('Ampliación del sistema — Fase 3 · Ventas y control económico',
+             'Presupuesto ARAYA-F23-20260916 (16/09/2026). Alcance:',
+             ['Clientes y presupuestos', 'Albaranes con QR y envío',
+              'Facturación de ventas', 'Cobros y conciliación asistida',
+              'Informes de ventas y cobros', 'Exportación mensual a la asesoría'],
+             3600.00),
+            ('Servicio de mantenimiento y soporte — septiembre 2026',
+             'Cuota mensual del sistema en producción (araya.innovaiasystems.com).',
+             [], 240.00),
+        ]),
 }
 
 NUMERO = sys.argv[1] if len(sys.argv) > 1 else '2026-001'
 CFG = FACTURAS[NUMERO]
 FECHA, VENCE, NOTA, LINEAS = CFG['fecha'], CFG['vence'], CFG['nota'], CFG['lineas']
-SALIDA = 'factura_%s_araya' % NUMERO
+NUMERO = CFG.get('numero', NUMERO)
+SALIDA = CFG.get('salida', 'factura_%s_araya' % NUMERO)
 
 
 def eur(v):
@@ -57,7 +105,12 @@ total = round(base + igic, 2)
 
 filas = ''
 for titulo, desc, puntos, imp in LINEAS:
-    lis = ('<div class="pts">' + ''.join('<div class="pt">· %s</div>' % p for p in puntos) + '</div>') if puntos else ''
+    if len(puntos) > 4:
+        lis = '<div class="pt">' + ' &middot; '.join(puntos) + '</div>'
+    elif puntos:
+        lis = '<div class="pts">' + ''.join('<div class="pt">· %s</div>' % p for p in puntos) + '</div>'
+    else:
+        lis = ''
     filas += (
         '<tr>'
         '<td><div class="ct">%s</div><div class="cd">%s</div>%s</td>'
@@ -67,17 +120,17 @@ for titulo, desc, puntos, imp in LINEAS:
         '</tr>' % (titulo, desc, lis, eur(imp), eur(round(imp * (1 + TIPO_IGIC), 2))))
 
 CSS = """
-@page { size:A4; margin:12mm 12mm 10mm; }
+@page { size:A4; margin:10mm 12mm 8mm; }
 *{box-sizing:border-box}
 body{font-family:"Liberation Serif","Times New Roman",serif;color:#111;font-size:10pt;margin:0;line-height:1.4}
 .cab{background:#000106;display:flex;align-items:center;justify-content:space-between;
-     padding:10px 22px;margin-bottom:14px}
-.cab img{height:64px;display:block}
+     padding:8px 22px;margin-bottom:10px}
+.cab img{height:56px;display:block}
 .cab .der{text-align:right;color:#fff}
 .cab .tit{font-size:26pt;font-weight:bold;letter-spacing:1px;line-height:1.1}
 .cab .dat{font-size:9pt;color:#e8e8ee;margin-top:8px;line-height:1.55}
 .cab .dat i{color:#E4B33C;font-style:italic}
-.emisor{margin-bottom:14px}
+.emisor{margin-bottom:8px}
 .emisor .n{font-size:12.5pt;font-weight:bold;color:#16205c;margin-bottom:2px}
 .emisor .l{font-size:9.5pt;line-height:1.5}
 hr{border:0;border-top:1px solid #c9a227;margin:0 0 14px}
@@ -86,28 +139,28 @@ hr{border:0;border-top:1px solid #c9a227;margin:0 0 14px}
 .cli .n{font-size:12.5pt;font-weight:bold;color:#16205c}
 .cli .l{font-size:10pt;line-height:1.5}
 .cli .aa{font-size:9pt;color:#555}
-table{width:100%;border-collapse:collapse;margin:14px 0 0}
+table{width:100%;border-collapse:collapse;margin:10px 0 0}
 th{background:#16205c;color:#fff;font-family:"Liberation Sans",Arial,sans-serif;font-size:9pt;
    letter-spacing:.6px;padding:7px 9px;text-transform:uppercase}
 th.r{text-align:right}th.c{text-align:center}
-td{border-bottom:1px solid #d5d5dd;padding:7px 9px;vertical-align:top}
+td{border-bottom:1px solid #d5d5dd;padding:5px 9px;vertical-align:top}
 td.r{text-align:right;white-space:nowrap}td.c{text-align:center}
 .imp{font-size:10.5pt}.b{font-weight:bold}
 .ct{font-weight:bold;font-size:10.5pt;margin-bottom:3px}
 .cd{font-size:8.6pt;color:#555;line-height:1.45}
 .pts{column-count:2;column-gap:7mm;margin-top:2px}
 .pt{font-size:8.6pt;color:#444;margin-left:4px;break-inside:avoid}
-.tot{width:46%;margin:8px 0 0 54%}
+.tot{width:46%;margin:6px 0 0 54%}
 .tot .f{display:flex;justify-content:space-between;padding:3px 10px;font-size:10pt;color:#333}
 .tot .caja{background:#16205c;color:#fff;padding:9px 12px;margin-top:6px;text-align:right}
 .tot .caja .l{font-family:"Liberation Sans",Arial,sans-serif;font-size:8.6pt;letter-spacing:.8px}
 .tot .caja .v{font-size:17pt;font-weight:bold;line-height:1.2}
-.pago{margin-top:14px}
-.pago .l{font-size:10pt;line-height:1.45}
+.pago{margin-top:8px}
+.pago .l{font-size:10pt;line-height:1.4}
 .nota{margin-top:7px;font-size:8.2pt;color:#555;font-style:italic;line-height:1.45}
 .pago .iban{font-family:"Liberation Mono","Courier New",monospace;font-weight:bold;font-size:10.5pt}
-.legal{margin-top:8px;border-top:1px solid #d5d5dd;padding-top:9px;
-       font-size:5.8pt;color:#555;line-height:1.32;text-align:justify;
+.legal{margin-top:6px;border-top:1px solid #d5d5dd;padding-top:9px;
+       font-size:5.6pt;color:#555;line-height:1.3;text-align:justify;
        column-count:3;column-gap:6mm;column-rule:.5px solid #e4e4ea}
 .legal b{color:#333}
 .legal p{margin:0 0 5px}
@@ -173,19 +226,7 @@ __FILAS__
 modificaci&oacute;n de los aspectos fiscales del R&eacute;gimen Econ&oacute;mico Fiscal de Canarias. Factura emitida
 conforme al Real Decreto 1619/2012, de 30 de noviembre, por el que se aprueba el Reglamento de facturaci&oacute;n.</p>
 
-<p><b>Protecci&oacute;n de datos.</b> Conforme al Reglamento (UE) 2016/679 (RGPD) y a la Ley Org&aacute;nica 3/2018
-(LOPDGDD), le informamos de que los datos personales de este documento son tratados por <b>Yurena M&eacute;ndez
-(Innova IA Systems)</b>, NIF 78527655C, C/ Cervantes, 14, 35625 Morro Jable, P&aacute;jara (Las Palmas), como
-responsable del tratamiento. <b>Finalidad:</b> gestionar la relaci&oacute;n comercial, emitir y conservar esta factura
-y atender las obligaciones legales, contables y fiscales derivadas. <b>Base jur&iacute;dica:</b> ejecuci&oacute;n del
-contrato (art. 6.1.b RGPD) y cumplimiento de obligaciones legales (art. 6.1.c RGPD). <b>Conservaci&oacute;n:</b>
-mientras dure la relaci&oacute;n y, despu&eacute;s, seis a&ntilde;os (art. 30 C&oacute;digo de Comercio) y cuatro
-a&ntilde;os (art. 66 Ley General Tributaria). <b>Destinatarios:</b> Administraci&oacute;n Tributaria y la
-asesor&iacute;a fiscal y contable, como encargada del tratamiento; no hay otras cesiones, ni transferencias
-internacionales, ni decisiones automatizadas. <b>Derechos:</b> acceso, rectificaci&oacute;n, supresi&oacute;n,
-oposici&oacute;n, limitaci&oacute;n y portabilidad, escribiendo a la direcci&oacute;n indicada o a
-info@innovaiasystems.com, y reclamaci&oacute;n ante la Agencia Espa&ntilde;ola de Protecci&oacute;n de Datos
-(www.aepd.es).</p>
+<p><b>Protecci&oacute;n de datos &mdash; informaci&oacute;n b&aacute;sica (RGPD y LOPDGDD).</b> <b>Responsable:</b> Yurena M&eacute;ndez (Innova IA Systems), NIF 78527655C, C/ Cervantes, 14, 35625 Morro Jable, P&aacute;jara (Las Palmas). <b>Finalidad:</b> gestionar la relaci&oacute;n comercial y emitir y conservar esta factura. <b>Legitimaci&oacute;n:</b> ejecuci&oacute;n del contrato y cumplimiento de obligaciones legales. <b>Destinatarios:</b> Administraci&oacute;n Tributaria y asesor&iacute;a fiscal y contable; no hay otras cesiones ni transferencias internacionales. <b>Conservaci&oacute;n:</b> los plazos legales &mdash; seis a&ntilde;os (C&oacute;digo de Comercio) y cuatro (Ley General Tributaria). <b>Derechos:</b> acceso, rectificaci&oacute;n, supresi&oacute;n, oposici&oacute;n, limitaci&oacute;n y portabilidad en info@innovaiasystems.com, y reclamaci&oacute;n ante la AEPD (www.aepd.es). Informaci&oacute;n ampliada a su disposici&oacute;n en la misma direcci&oacute;n.</p>
 
 <p><b>Confidencialidad.</b> Documento confidencial dirigido &uacute;nicamente a su destinatario; si lo ha recibido por error, comun&iacute;quelo y destr&uacute;yalo.</p>
 
