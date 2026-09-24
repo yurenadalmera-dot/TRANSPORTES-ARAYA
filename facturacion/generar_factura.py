@@ -12,8 +12,7 @@ FACTURAS = {
         fecha='24/09/2026', vence='24/10/2026', nota='',
         lineas=[
             ('Implantación sistema de gestión operativo — Fase 1',
-             'Según presupuesto INNOVA-2026-001 (aceptado 20/08/2026).<br>'
-             'Entregables verificados en producción el 31/08/2026:',
+             'Presupuesto INNOVA-2026-001 (aceptado 20/08/2026). Entregado y en funcionamiento:',
              ['Panel operativo privado', 'Control de stock', 'Pedidos a proveedores',
               'Gestión de facturas', 'Control de deuda', 'Alertas operativas'],
              1500.00),
@@ -66,7 +65,7 @@ FACTURAS = {
              'se mantiene en 240,00 &euro; + IGIC y se factura aparte cada mes.',
         lineas=[
             ('Implantación del sistema — Fase 1',
-             'Presupuesto INNOVA-2026-001 (aceptado 20/08/2026). Entregado y verificado en producción el 31/08/2026:',
+             'Presupuesto INNOVA-2026-001 (aceptado 20/08/2026). Entregado y en funcionamiento:',
              ['Panel operativo privado', 'Control de stock', 'Pedidos a proveedores',
               'Gestión de facturas', 'Control de deuda', 'Alertas operativas'],
              1500.00),
