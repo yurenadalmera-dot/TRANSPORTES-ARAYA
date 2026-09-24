@@ -9,7 +9,7 @@ TIPO_IGIC = 0.07
 
 FACTURAS = {
     '2026-001': dict(
-        fecha='24/09/2026', vence='24/10/2026', nota='',
+        fecha='24/09/2026', vence='A la recepción', nota='',
         lineas=[
             ('Implantación sistema de gestión operativo — Fase 1',
              'Presupuesto INNOVA-2026-001 (aceptado 20/08/2026). Entregado y en funcionamiento:',
@@ -21,7 +21,7 @@ FACTURAS = {
              [], 240.00),
         ]),
     '2026-002': dict(
-        fecha='24/09/2026', vence='24/10/2026',
+        fecha='24/09/2026', vence='A la recepción',
         nota='El 50 % restante &mdash; 1.177,00 &euro; de la fase 2 y 1.926,00 &euro; de la fase 3 &mdash; se factura a la '
              'entrega de cada una. La cuota mensual se mantiene en 240,00 &euro; + IGIC y no var&iacute;a por estas fases.',
         lineas=[
@@ -40,7 +40,7 @@ FACTURAS = {
         ]),
     'fases23': dict(
         numero='2026-002', salida='factura_2026-002_araya_completa',
-        fecha='24/09/2026', vence='24/10/2026',
+        fecha='24/09/2026', vence='A la recepción',
         nota='Importe &iacute;ntegro de ambas fases seg&uacute;n presupuesto ARAYA-F23-20260916. La cuota mensual del '
              'servicio se mantiene en 240,00 &euro; + IGIC y no var&iacute;a por la contrataci&oacute;n de estas fases.',
         lineas=[
@@ -59,7 +59,7 @@ FACTURAS = {
         ]),
     'completa': dict(
         numero='2026-001', salida='factura_2026-001_araya_completa',
-        fecha='24/09/2026', vence='24/10/2026',
+        fecha='24/09/2026', vence='A la recepción',
         nota='Factura &uacute;nica por la implantaci&oacute;n completa del sistema: fase 1 seg&uacute;n presupuesto '
              'INNOVA-2026-001 y fases 2 y 3 seg&uacute;n presupuesto ARAYA-F23-20260916. La cuota mensual del servicio '
              'se mantiene en 240,00 &euro; + IGIC y se factura aparte cada mes.',
@@ -215,7 +215,7 @@ __FILAS__
     Transferencia bancaria &mdash; IBAN <span class="iban">ES53 0182 5342 7802 0318 5904</span><br>
     Titular: Yurena M&eacute;ndez (Innova IA Systems)<br>
     Concepto: Factura __NUM__ &middot; Transportes Araya<br>
-    Plazo de pago: 30 d&iacute;as desde la fecha de emisi&oacute;n (vence el __VENCE__).
+    Pago: al contado, a la recepci&oacute;n de esta factura.
   </div>
   __NOTA__
 </div>
