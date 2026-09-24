@@ -36,7 +36,7 @@ total = round(base + igic, 2)
 
 filas = ''
 for titulo, desc, puntos, imp in LINEAS:
-    lis = ''.join('<div class="pt">· %s</div>' % p for p in puntos)
+    lis = ('<div class="pts">' + ''.join('<div class="pt">· %s</div>' % p for p in puntos) + '</div>') if puntos else ''
     filas += (
         '<tr>'
         '<td><div class="ct">%s</div><div class="cd">%s</div>%s</td>'
@@ -46,17 +46,17 @@ for titulo, desc, puntos, imp in LINEAS:
         '</tr>' % (titulo, desc, lis, eur(imp), eur(round(imp * (1 + TIPO_IGIC), 2))))
 
 CSS = """
-@page { size:A4; margin:14mm 12mm 12mm; }
+@page { size:A4; margin:12mm 12mm 10mm; }
 *{box-sizing:border-box}
 body{font-family:"Liberation Serif","Times New Roman",serif;color:#111;font-size:10pt;margin:0;line-height:1.4}
 .cab{background:#000106;display:flex;align-items:center;justify-content:space-between;
-     padding:14px 22px;margin-bottom:26px}
-.cab img{height:104px;display:block}
+     padding:12px 22px;margin-bottom:18px}
+.cab img{height:92px;display:block}
 .cab .der{text-align:right;color:#fff}
 .cab .tit{font-size:26pt;font-weight:bold;letter-spacing:1px;line-height:1.1}
 .cab .dat{font-size:9pt;color:#e8e8ee;margin-top:8px;line-height:1.55}
 .cab .dat i{color:#E4B33C;font-style:italic}
-.emisor{margin-bottom:26px}
+.emisor{margin-bottom:18px}
 .emisor .n{font-size:12.5pt;font-weight:bold;color:#16205c;margin-bottom:2px}
 .emisor .l{font-size:9.5pt;line-height:1.5}
 hr{border:0;border-top:1px solid #c9a227;margin:0 0 14px}
@@ -65,26 +65,28 @@ hr{border:0;border-top:1px solid #c9a227;margin:0 0 14px}
 .cli .n{font-size:12.5pt;font-weight:bold;color:#16205c}
 .cli .l{font-size:10pt;line-height:1.5}
 .cli .aa{font-size:9pt;color:#555}
-table{width:100%;border-collapse:collapse;margin:26px 0 0}
+table{width:100%;border-collapse:collapse;margin:18px 0 0}
 th{background:#16205c;color:#fff;font-family:"Liberation Sans",Arial,sans-serif;font-size:9pt;
    letter-spacing:.6px;padding:7px 9px;text-transform:uppercase}
 th.r{text-align:right}th.c{text-align:center}
-td{border-bottom:1px solid #d5d5dd;padding:9px;vertical-align:top}
+td{border-bottom:1px solid #d5d5dd;padding:8px 9px;vertical-align:top}
 td.r{text-align:right;white-space:nowrap}td.c{text-align:center}
 .imp{font-size:10.5pt}.b{font-weight:bold}
 .ct{font-weight:bold;font-size:10.5pt;margin-bottom:3px}
 .cd{font-size:8.6pt;color:#555;line-height:1.45}
-.pt{font-size:8.6pt;color:#444;margin-left:4px}
-.tot{width:46%;margin:16px 0 0 54%}
+.pts{column-count:2;column-gap:7mm;margin-top:2px}
+.pt{font-size:8.6pt;color:#444;margin-left:4px;break-inside:avoid}
+.tot{width:46%;margin:12px 0 0 54%}
 .tot .f{display:flex;justify-content:space-between;padding:3px 10px;font-size:10pt;color:#333}
 .tot .caja{background:#16205c;color:#fff;padding:9px 12px;margin-top:6px;text-align:right}
 .tot .caja .l{font-family:"Liberation Sans",Arial,sans-serif;font-size:8.6pt;letter-spacing:.8px}
 .tot .caja .v{font-size:17pt;font-weight:bold;line-height:1.2}
-.pago{margin-top:34px}
+.pago{margin-top:18px}
 .pago .l{font-size:10pt;line-height:1.6}
 .pago .iban{font-family:"Liberation Mono","Courier New",monospace;font-weight:bold;font-size:10.5pt}
-.legal{margin-top:30px;border-top:1px solid #d5d5dd;padding-top:10px;
-       font-size:7.4pt;color:#555;line-height:1.45;text-align:justify}
+.legal{margin-top:12px;border-top:1px solid #d5d5dd;padding-top:9px;
+       font-size:6.3pt;color:#555;line-height:1.38;text-align:justify;
+       column-count:2;column-gap:9mm;column-rule:.5px solid #e4e4ea}
 .legal b{color:#333}
 .legal p{margin:0 0 5px}
 """
@@ -144,35 +146,30 @@ __FILAS__
 </div>
 
 <div class="legal">
-<p><b>Operaci&oacute;n sujeta a IGIC al 7 %</b> conforme a la Ley 20/1991, de 7 de junio, de modificaci&oacute;n de
-los aspectos fiscales del R&eacute;gimen Econ&oacute;mico Fiscal de Canarias. Factura emitida conforme al Real Decreto
-1619/2012, de 30 de noviembre, por el que se aprueba el Reglamento de facturaci&oacute;n.</p>
+<p><b>R&eacute;gimen fiscal.</b> Operaci&oacute;n sujeta a IGIC al 7 % conforme a la Ley 20/1991, de 7 de junio, de
+modificaci&oacute;n de los aspectos fiscales del R&eacute;gimen Econ&oacute;mico Fiscal de Canarias. Factura emitida
+conforme al Real Decreto 1619/2012, de 30 de noviembre, por el que se aprueba el Reglamento de facturaci&oacute;n.</p>
 
-<p><b>Protecci&oacute;n de datos.</b> En cumplimiento del Reglamento (UE) 2016/679 (RGPD) y de la Ley Org&aacute;nica
-3/2018, de 5 de diciembre, de Protecci&oacute;n de Datos Personales y garant&iacute;a de los derechos digitales
-(LOPDGDD), le informamos de que los datos personales que constan en este documento son tratados por
-<b>Yurena M&eacute;ndez (Innova IA Systems)</b>, NIF 78527655C, con domicilio en C/ Cervantes, 14, 35625 Morro Jable,
-P&aacute;jara (Las Palmas), en calidad de responsable del tratamiento. <b>Finalidad:</b> gestionar la relaci&oacute;n
-comercial y contractual, emitir y conservar esta factura y atender las obligaciones legales, contables y fiscales
-derivadas de la misma. <b>Base jur&iacute;dica:</b> la ejecuci&oacute;n del contrato en el que el interesado es parte
-(art. 6.1.b RGPD) y el cumplimiento de obligaciones legales aplicables al responsable (art. 6.1.c RGPD).
-<b>Conservaci&oacute;n:</b> durante la vigencia de la relaci&oacute;n comercial y, despu&eacute;s, durante los plazos
-legalmente exigidos &mdash; seis a&ntilde;os conforme al art. 30 del C&oacute;digo de Comercio y cuatro a&ntilde;os
-conforme al art. 66 de la Ley General Tributaria. <b>Destinatarios:</b> no se ceden datos a terceros salvo
-obligaci&oacute;n legal, a la Administraci&oacute;n Tributaria y a la asesor&iacute;a fiscal y contable que act&uacute;a
-como encargada del tratamiento. No se realizan transferencias internacionales ni decisiones automatizadas.
-<b>Derechos:</b> puede ejercer los derechos de acceso, rectificaci&oacute;n, supresi&oacute;n, oposici&oacute;n,
-limitaci&oacute;n del tratamiento y portabilidad dirigi&eacute;ndose por escrito a la direcci&oacute;n indicada o a
-info@innovaiasystems.com, acreditando su identidad, as&iacute; como presentar una reclamaci&oacute;n ante la Agencia
-Espa&ntilde;ola de Protecci&oacute;n de Datos (www.aepd.es).</p>
+<p><b>Protecci&oacute;n de datos.</b> Conforme al Reglamento (UE) 2016/679 (RGPD) y a la Ley Org&aacute;nica 3/2018
+(LOPDGDD), le informamos de que los datos personales de este documento son tratados por <b>Yurena M&eacute;ndez
+(Innova IA Systems)</b>, NIF 78527655C, C/ Cervantes, 14, 35625 Morro Jable, P&aacute;jara (Las Palmas), como
+responsable del tratamiento. <b>Finalidad:</b> gestionar la relaci&oacute;n comercial, emitir y conservar esta factura
+y atender las obligaciones legales, contables y fiscales derivadas. <b>Base jur&iacute;dica:</b> ejecuci&oacute;n del
+contrato (art. 6.1.b RGPD) y cumplimiento de obligaciones legales (art. 6.1.c RGPD). <b>Conservaci&oacute;n:</b>
+mientras dure la relaci&oacute;n y, despu&eacute;s, seis a&ntilde;os (art. 30 C&oacute;digo de Comercio) y cuatro
+a&ntilde;os (art. 66 Ley General Tributaria). <b>Destinatarios:</b> Administraci&oacute;n Tributaria y la
+asesor&iacute;a fiscal y contable, como encargada del tratamiento; no hay otras cesiones, ni transferencias
+internacionales, ni decisiones automatizadas. <b>Derechos:</b> acceso, rectificaci&oacute;n, supresi&oacute;n,
+oposici&oacute;n, limitaci&oacute;n y portabilidad, escribiendo a la direcci&oacute;n indicada o a
+info@innovaiasystems.com, y reclamaci&oacute;n ante la Agencia Espa&ntilde;ola de Protecci&oacute;n de Datos
+(www.aepd.es).</p>
 
-<p><b>Confidencialidad.</b> Este documento y la informaci&oacute;n que contiene son confidenciales y van dirigidos
-&uacute;nicamente a su destinatario. Si lo ha recibido por error, le rogamos lo comunique al remitente y proceda a su
-destrucci&oacute;n.</p>
+<p><b>Confidencialidad.</b> Este documento es confidencial y va dirigido &uacute;nicamente a su destinatario. Si lo ha
+recibido por error, comun&iacute;quelo al remitente y proceda a su destrucci&oacute;n.</p>
 
-<p><b>Morosidad.</b> El impago en la fecha de vencimiento devengar&aacute; autom&aacute;ticamente el inter&eacute;s de
-demora previsto en la Ley 3/2004, de 29 de diciembre, por la que se establecen medidas de lucha contra la morosidad en
-las operaciones comerciales, sin necesidad de aviso previo ni de intimaci&oacute;n alguna.</p>
+<p><b>Morosidad.</b> El impago al vencimiento devengar&aacute; autom&aacute;ticamente el inter&eacute;s de demora de la
+Ley 3/2004, de 29 de diciembre, de lucha contra la morosidad en las operaciones comerciales, sin necesidad de aviso ni
+intimaci&oacute;n previa.</p>
 </div>
 """
 
