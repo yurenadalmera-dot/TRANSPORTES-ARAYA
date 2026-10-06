@@ -55,6 +55,23 @@ FACTURAS = {
              'Descuento del 10 % sobre la base de la fase 2 (2.200,00 €).',
              [], -220.00),
         ]),
+    'fase3': dict(
+        numero='2026-003', salida='factura_2026-003_araya_fase3',
+        fecha='06/10/2026', vence='A la recepción',
+        nota='Importe de la fase 3 seg&uacute;n presupuesto ARAYA-F23-20260916, con un descuento comercial del 10 % '
+             'sobre la base. La cuota mensual del servicio se mantiene en 240,00 &euro; + IGIC y no var&iacute;a por '
+             'la contrataci&oacute;n de esta fase.',
+        lineas=[
+            ('Ampliación del sistema — Fase 3 · Ventas y control económico',
+             'Presupuesto ARAYA-F23-20260916 (16/09/2026). Alcance:',
+             ['Clientes y presupuestos', 'Albaranes con QR y envío',
+              'Facturación de ventas', 'Cobros y conciliación asistida',
+              'Informes de ventas y cobros', 'Exportación mensual a la asesoría'],
+             3600.00),
+            ('Descuento comercial — 10 %',
+             'Descuento del 10 % sobre la base de la fase 3 (3.600,00 €).',
+             [], -360.00),
+        ]),
     'fases23': dict(
         numero='2026-002', salida='factura_2026-002_araya_completa',
         fecha='24/09/2026', vence='A la recepción',
