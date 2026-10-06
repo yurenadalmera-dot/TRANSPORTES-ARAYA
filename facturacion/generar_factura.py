@@ -38,6 +38,23 @@ FACTURAS = {
               'Informes de ventas y cobros', 'Exportación mensual a la asesoría'],
              1800.00),
         ]),
+    'fase2': dict(
+        numero='2026-002', salida='factura_2026-002_araya_fase2',
+        fecha='06/10/2026', vence='A la recepción',
+        nota='Importe de la fase 2 seg&uacute;n presupuesto ARAYA-F23-20260916, con un descuento comercial del 10 % '
+             'sobre la base. La cuota mensual del servicio se mantiene en 240,00 &euro; + IGIC y no var&iacute;a por '
+             'la contrataci&oacute;n de esta fase.',
+        lineas=[
+            ('Ampliación del sistema — Fase 2 · Integración y operativa',
+             'Presupuesto ARAYA-F23-20260916 (16/09/2026). Alcance:',
+             ['Integración con FactuSol', 'Lectura automática de facturas',
+              'WhatsApp y avisos de reposición', 'Control de cubetas',
+              'Planificación de rutas', 'Puesta en marcha y formación'],
+             2200.00),
+            ('Descuento comercial — 10 %',
+             'Descuento del 10 % sobre la base de la fase 2 (2.200,00 €).',
+             [], -220.00),
+        ]),
     'fases23': dict(
         numero='2026-002', salida='factura_2026-002_araya_completa',
         fecha='24/09/2026', vence='A la recepción',
