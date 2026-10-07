@@ -1,12 +1,14 @@
 // Buscador libre en Albaranes de servicio (07/10/2026). Va despues de la capa de filtros de "Construir panel":
 // primero busca el texto en todos los campos del albaran y luego los filtros de siempre trabajan sobre lo encontrado.
+// Tambien hace que los albaranes anulados (columna anulado, funcion anular_albaran) se traten como anulados en la
+// capa de filtros: etiqueta ANULADO, fuera de los totales y sin poder facturarlos; y pone el motivo y quien lo anulo.
 // Si algo falla, se sirve el panel sin el buscador. Para quitarlo: dejar este nodo en   return [{json:{html: $json.html}}];
 function busca(){
 if(window.__BUSX)return;window.__BUSX='1';
 if(typeof S==='undefined'||typeof render!=='function'||typeof vAlb!=='function')return;
 window.VX=window.VX||{};
 var B={q:''},tmr=null,foco=false,pos=0;
-function nrm(s){s=String(s==null?'':s).toLowerCase();try{s=s.normalize('NFD').replace(/[̀-ͯ]/g,'');}catch(e){}return s;}
+function nrm(s){s=String(s==null?'':s).toLowerCase();try{s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){}return s;}
 function fecha(f){var p=String(f||'').slice(0,10).split('-');return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):'';}
 function texto(a){var t=[],k,v;
  for(k in a){v=a[k];if(v==null)continue;
@@ -27,8 +29,25 @@ function meter(html,c){
  if(i>=0)return html.slice(0,i)+c+html.slice(i);
  var j=html.indexOf('<div class="ch">');if(j<0)return c+html;
  var k=html.indexOf('</div>',j);return k<0?c+html:html.slice(0,k+6)+c+html.slice(k+6);}
+function norm(){((S.d&&S.d.al)||[]).forEach(function(a){if(a&&a.anulado&&a.estado!=='anulado')a.estado='anulado';});}
+function fdma(t){var p=String(t||'').slice(0,10).split('-');return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):'';}
+function motivos(){
+ var m={},bs=document.querySelectorAll('[data-valb]'),i;
+ ((S.d&&S.d.al)||[]).forEach(function(a){if(a&&a.anulado)m[a.id]=a;});
+ for(i=0;i<bs.length;i++){
+  var a=m[bs[i].getAttribute('data-valb')];if(!a)continue;
+  var tr=bs[i];while(tr&&tr.tagName!=='TR')tr=tr.parentNode;if(!tr||tr.getAttribute('data-busxm'))continue;
+  var tags=tr.querySelectorAll('.tg'),k,sm=null;
+  for(k=0;k<tags.length;k++){if(/ANULADO/.test(tags[k].textContent||'')){sm=tags[k].parentNode.querySelector('.sm');break;}}
+  if(!sm)continue;
+  tr.setAttribute('data-busxm','1');
+  sm.textContent='Anulado'+(a.anulado_por?' por '+a.anulado_por:'')+(a.anulado_at?' el '+fdma(a.anulado_at):'')+(a.motivo_anulacion?' · '+a.motivo_anulacion:'')+' · no facturar';
+  sm.style.whiteSpace='normal';}}
+var prevMd=window.MDX&&MDX.nfv;
+if(prevMd)MDX.nfv=function(m){norm();return prevMd(m);};
 var prev=VX.albaranes||function(){return vAlb();};
 VX.albaranes=function(){
+ norm();
  var all=(S.d&&S.d.al)||[];
  if(!all.length)return prev();
  var ws=nrm(B.q).split(/\s+/).filter(function(w){return !!w;});
@@ -41,6 +60,7 @@ VX.albaranes=function(){
  return meter(html,caja(f.length,all.length));};
 function enlaza(){
  if(S.v!=='albaranes')return;
+ motivos();
  var e=q('#busx_q');
  if(e){
   e.oninput=function(){B.q=e.value;clearTimeout(tmr);

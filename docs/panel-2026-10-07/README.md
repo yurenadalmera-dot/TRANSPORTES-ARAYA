@@ -82,6 +82,34 @@ Función nueva `crear_factura_venta(p_usuario, p_datos)`: numeración, líneas y
 - Vista nueva `v_movimientos_facturas` (security_invoker): junta `conciliacion_lineas` y los
   `factura_id` / `factura_venta_id` directos del movimiento.
 
+## 6. Albaranes: se anulan, no se borran
+
+**Qué pasó con los «borrados»:** `borrar_albaran` eliminaba el albarán y dejaba copia en
+`albaranes_borrados` (hay 39, todos borrados desde el panel). En la serie D faltaban tres números:
+
+- **D-9 y D-10**: borrados el 05/10/2026 con motivo «PRUEBA». La copia completa, con sus líneas,
+  está en `albaranes_borrados`.
+- **D-27**: no se borró. Nunca existió como albarán. El D-26 se creó el 05/10 a las 20:23, el C4
+  (serie interna) a las 20:28 y el siguiente D fue el D-28 al día siguiente: ese número se quedó
+  sin usar.
+
+**Ahora:**
+
+- El botón **Borrar** pasa a ser **Anular**. Pide motivo (obligatorio), el albarán se queda en la
+  lista como **ANULADO** (fila apagada y tachada, con motivo, quién y cuándo), sale de los
+  totales, no se ofrece al facturar y el material que descontó vuelve al almacén.
+- Columnas nuevas en `albaranes`: `anulado`, `anulado_at`, `anulado_por`, `motivo_anulacion` (también
+  en `v_albaranes`, al final). Función nueva `anular_albaran(p_usuario, p_albaran, p_motivo)`: exige
+  `puede_borrar` y no anula uno facturado.
+- Un trigger (`trg_albaran_anulado_no_facturar`) impide facturar o reactivar un albarán anulado.
+- Se ha quitado al panel (rol `authenticated`) el permiso de ejecutar `borrar_albaran`: ya no se
+  puede borrar desde el panel, aunque quede algún botón antiguo en caché.
+- En n8n, el nodo «Buscador albaranes» hace que la capa de filtros trate estos albaranes como
+  anulados (la capa ya sabía mostrar los cancelados desde el planning).
+
+**Importante:** los cambios del flujo de n8n se guardan como borrador y **hay que publicarlos** para
+que el panel los sirva. El buscador del punto 2 no estuvo activo hasta que se publicó junto con esto.
+
 ## Cómo deshacer
 
 - Panel: restaurar la versión anterior desde `app_ui_versiones` (se guarda sola en cada cambio).
