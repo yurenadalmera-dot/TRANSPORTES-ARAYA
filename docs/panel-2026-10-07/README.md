@@ -93,6 +93,12 @@ Función nueva `crear_factura_venta(p_usuario, p_datos)`: numeración, líneas y
   (serie interna) a las 20:28 y el siguiente D fue el D-28 al día siguiente: ese número se quedó
   sin usar.
 
+**Recuperados:** D-9 y D-10 se han vuelto a crear desde `albaranes_borrados` (mismo id, número,
+datos y líneas) ya **anulados**, con el motivo «PRUEBA (recuperado del historial de borrados)», tu
+nombre y la fecha en que se borraron. Para no cambiarles el número ni crear de nuevo su trabajo en
+el planning, se desactivaron `trg_albaran_numerar` y `trg_planning_espejo_albaran` solo durante esa
+transacción; quedaron activos otra vez y el contador de la serie D sigue en 52.
+
 **Ahora:**
 
 - El botón **Borrar** pasa a ser **Anular**. Pide motivo (obligatorio), el albarán se queda en la
